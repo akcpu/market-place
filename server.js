@@ -62,8 +62,7 @@ app.post('/api/users', function (req, res) {
 
 // GET /api/products
 app.get('/api/products', function(req, res){
-    return res.send('collection of registered products');
-    
+    res.send(products);
 });
 
 // GET /api/products/:id
