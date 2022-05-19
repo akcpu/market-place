@@ -44,9 +44,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/users', (req, res) => {
-    for (let index = 0; index < db.users.length; index++) {
         res.send(db.users.id[index]+" " + db.users.userName[index]+" " + db.users.name[index]+" " + db.users.pass[index]);
-    }
 });
 
 app.get('/users/:id', (req, res) => {
