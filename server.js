@@ -1,33 +1,5 @@
 'use strict';
 const express = require('express');
-//const db = require('db.js');
-let db = {}
-db.users = [{
-    "id":1,
-    "userName": "user",
-    "name": "user",
-    "pass": "123123",
-},
-{
-    "id":2,
-    "userName": "user2",
-    "name": "user2",
-    "pass": "111111",
-},]
-
-db.products = [{
-    "id":100,
-    "productName": "product1",
-    "productDescription": "product Description1",
-    "productPrice": 123123,
-},
-{
-    "id":102,
-    "productName": "product2",
-    "productDescription": "product Description2",
-    "productPrice": 123123,
-},]
-
 
 //constants
 const PORT = 8080;
@@ -35,7 +7,6 @@ const HOST = '0.0.0.0';
 
 //App
 const app = express();
-
 
 // for parsing the body in POST request
 var bodyParser = require('body-parser');
@@ -47,14 +18,30 @@ var users =[{
     email: "john@doe.com"
 }];
 
+var products =[{
+    id: 1,
+    name: "John Doe",
+    price : 23,
+    "desc": "product desc"
+}];
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-// GET /api/users
-app.get('/api/users', function(req, res){
-    return res.json(users);    
+// GET /
+app.post('/', function (req, res) {
+    return res.send('Hello World');
 });
 
+// GET /api/users
+app.get('/api/users', function(req, res){
+    return res.send('collection of registered users');
+});
+
+// GET /api/users/:id
+app.get('/api/users/:id', function(req, res){
+    return res.send('get a user by user id');   
+});
 
 /* POST /api/users
     {
@@ -72,6 +59,35 @@ app.post('/api/users', function (req, res) {
 
     return res.send('User has been added successfully');
 });
+
+
+// GET /api/products
+app.get('/api/products', function(req, res){
+    return res.send('collection of registered products');
+});
+
+// GET /api/products/:id
+app.get('/api/products/:id', function(req, res){
+    return res.send('get a user by product id');   
+});
+
+/* POST /api/products
+    {
+        "product": {
+           "id": 3,
+            "name": "Test User",
+            "price" : 20,
+            "desc": "product desc"
+        }
+    }
+*/
+app.post('/api/products', function (req, res) {
+    var user = req.body.product;
+    users.push(product);
+
+    return res.send('product has been added successfully');
+});
+
 
 app.listen(PORT,HOST);
 console.log('Running on http://${HOST}:${PORT}');
