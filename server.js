@@ -35,15 +35,11 @@ app.post('/', function (req, res) {
 
 // GET /api/users
 app.get('/api/users', function(req, res){
-    console.log(req.body);
-    console.log(res.body);
     return res.send('collection of registered users');
 });
 
 // GET /api/users/:id
 app.get('/api/users/:id', function(req, res){
-    console.log(req.body);
-    console.log(res.body);
     return res.send('get a user by user id');   
 });
 
@@ -60,23 +56,18 @@ app.get('/api/users/:id', function(req, res){
 app.post('/api/users', function (req, res) {
     var user = req.body.user;
     users.push(user);
-    console.log(req.body);
-    console.log(res.body);
+
     return res.send('User has been added successfully');
 });
 
 // GET /api/products
 app.get('/api/products', function(req, res){
-    console.log(req.body);
-    console.log(res.body);
     return res.send('collection of registered products');
     
 });
 
 // GET /api/products/:id
 app.get('/api/products/:id', function(req, res){
-    console.log(req.body);
-    console.log(res.body);
     return res.send('get a product by product id');   
 });
 
@@ -93,8 +84,7 @@ app.get('/api/products/:id', function(req, res){
 app.post('/api/products', function (req, res) {
     var product = req.body.product;
     product.push(product);
-    console.log(req.body);
-    console.log(res.body);
+
     return res.send('product has been added successfully');
 });
 
