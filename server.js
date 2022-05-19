@@ -29,8 +29,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // GET /
-app.post('/', function (req, res) {
-    return res.send('Hello World');
+app.get('/', function (req, res) {
+    return res.send('Hello World..');
 });
 
 // GET /api/users
@@ -54,8 +54,13 @@ app.get('/api/users/:id', function(req, res){
     }
 */
 app.post('/api/users', function (req, res) {
-    var user = req.body.user;
-    users.push(user);
+    var user2 ={
+        id: 2,
+        name: "John Doe0",
+        age : 24,
+        email: "john0@doe.com"
+    };
+    users.push(user2);
 
     return res.send('User has been added successfully');
 });
@@ -67,7 +72,8 @@ app.get('/api/products', function(req, res){
 
 // GET /api/products/:id
 app.get('/api/products/:id', function(req, res){
-    res.send(products.id==req.id?products.id+products.name+products.price+products.desc:"Nothing");
+    //res.send(products.id==req.id?products.id+products.name+products.price+products.desc:"Nothing");
+    return res.send('get a product by product id');   
 });
 
 /* POST /api/products
@@ -81,8 +87,13 @@ app.get('/api/products/:id', function(req, res){
     }
 */
 app.post('/api/products', function (req, res) {
-    var product = req.body.product;
-    product.push(product);
+    var product ={
+        id: 3,
+        name: "John Doe3",
+        price : 26,
+        "desc": "product3 desc"
+    };
+    products.push(product);
 
     return res.send('product has been added successfully');
 });
