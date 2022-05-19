@@ -60,7 +60,6 @@ app.post('/api/users', function (req, res) {
     return res.send('User has been added successfully');
 });
 
-
 // GET /api/products
 app.get('/api/products', function(req, res){
     return res.send('collection of registered products');
@@ -87,7 +86,6 @@ app.post('/api/products', function (req, res) {
 
     return res.send('product has been added successfully');
 });
-
 
 app.listen(PORT,HOST);
 console.log('Running on http://${HOST}:${PORT}');
