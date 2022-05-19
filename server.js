@@ -68,7 +68,7 @@ app.get('/api/products', function(req, res){
 
 // GET /api/products/:id
 app.get('/api/products/:id', function(req, res){
-    return res.send('get a user by product id');   
+    return res.send('get a product by product id');   
 });
 
 /* POST /api/products
@@ -82,8 +82,8 @@ app.get('/api/products/:id', function(req, res){
     }
 */
 app.post('/api/products', function (req, res) {
-    var user = req.body.product;
-    users.push(product);
+    var product = req.body.product;
+    product.push(product);
 
     return res.send('product has been added successfully');
 });
