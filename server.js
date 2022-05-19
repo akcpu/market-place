@@ -72,8 +72,7 @@ app.get('/api/products', function(req, res){
 
 // GET /api/products/:id
 app.get('/api/products/:id', function(req, res){
-    //res.send(products.id==req.id?products.id+products.name+products.price+products.desc:"Nothing");
-    return res.send('get a product by product id');   
+    return res.send('get a product by product id'+req.id);   
 });
 
 /* POST /api/products
