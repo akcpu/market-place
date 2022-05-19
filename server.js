@@ -35,7 +35,7 @@ app.post('/', function (req, res) {
 
 // GET /api/users
 app.get('/api/users', function(req, res){
-    return users;
+    res.send(users);
 });
 
 // GET /api/users/:id
