@@ -37,39 +37,40 @@ const HOST = '0.0.0.0';
 const app = express();
 
 
-app.get('/', (req, res) => {
-    res.send('Hello World.!',req,res);
-    console.log(db);
+// for parsing the body in POST request
+var bodyParser = require('body-parser');
 
-});
+var users =[{
+    id: 1,
+    name: "John Doe",
+    age : 23,
+    email: "john@doe.com"
+}];
 
-app.get('/users', (req, res) => {
-        res.send(db.users.id[index]+" " + db.users.userName[index]+" " + db.users.name[index]+" " + db.users.pass[index]);
-});
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
-app.get('/users/:id', (req, res) => {
-    res.send('get a user by user id');
-});
-app.post('/users', (req, res) => {
-    db.users.push({userName: 'armank',pass:'paas', name: 'arman',id:3})
-    res.send('register a user');
-    console.log(db);
-
+// GET /api/users
+app.get('/api/users', function(req, res){
+    return res.json(users);    
 });
 
-app.get('/products', (req, res) => {
-    res.send('collection of registered products');
-});
-app.get('/products/:id', (req, res) => {
-    res.send('get a product by product id');
-});
-app.post('/products', (req, res) => {
-    db.products.push({productName: 'product3',productPrice:3214, productDescription: 'productDecription3',id:3})
-    res.send('register a product');
-});
 
-app.post('/login', (req, res) => {
-    res.send('authenticate the user');
+/* POST /api/users
+    {
+        "user": {
+           "id": 3,
+            "name": "Test User",
+            "age" : 20,
+            "email": "test@test.com"
+        }
+    }
+*/
+app.post('/api/users', function (req, res) {
+    var user = req.body.user;
+    users.push(user);
+
+    return res.send('User has been added successfully');
 });
 
 app.listen(PORT,HOST);
