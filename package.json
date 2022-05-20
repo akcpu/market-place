@@ -3,12 +3,13 @@
     "version": "1.0.0",
     "description": "Node.js on Docker",
     "author": "Arman Kiani <armankianipm@gmail.com>",
-    "type":"module",
     "main": "server.js",
     "scripts": {
         "start": "node server.js"
     },
     "dependencies": {
-        "express":"^4.16.1"
+        "express": "^4.16.1",
+        "mongodb": "^4.6.0",
+        "mongoose": "^6.3.4"
     }
 }

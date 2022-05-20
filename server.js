@@ -1,6 +1,16 @@
 'use strict';
 const express = require('express');
 //const db = require('./db.js');
+var mongoose = require('mongoose');
+
+mongoose
+	.connect(
+	'mongodb://mongo:27017/mydb',
+	 { useNewUrlParser: true }
+	 )
+	 .then(() => console.log('MongoDB Connected'))
+	 .catch(err => console.log(err));
+     
 const { login } = require('./auth/handler');
 const { getUsers, getUserById, setUser } = require('./users/handler');
 const { getproducts, getProductById, setProduct } = require('./products/handler');
