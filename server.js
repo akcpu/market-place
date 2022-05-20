@@ -26,7 +26,20 @@ app.get('/api/users', function (req, res) {
 
 // GET /api/users/:id
 app.get('/api/users/:id', function (req, res) {
-    return res.send('get a user by user id ' + req.params.id);
+    var reqId = req.params.id;
+    const user = db.users.filter((user) =>{
+        if ((reqId == user.id) ) {
+            return true
+        }
+        else {
+            return false
+        }
+    })
+    if (user){
+        return res.send(user);
+    } else {
+        return res.send ('ID not correct.');
+    }
 });
 
 app.post('/api/users', function (req, res) {
@@ -49,7 +62,20 @@ app.get('/api/products', function (req, res) {
 
 // GET /api/products/:id
 app.get('/api/products/:id', function (req, res) {
-    return res.send('get a product by product id' + req.params.id);
+    var reqId = req.params.id;
+    const product = db.products.filter((product) =>{
+        if ((reqId == product.id) ) {
+            return true
+        }
+        else {
+            return false
+        }
+    })
+    if (product){
+        return res.send(product);
+    } else {
+        return res.send ('ID not correct.');
+    }
 });
 
 app.post('/api/products', function (req, res) {
@@ -67,22 +93,20 @@ app.post('/api/products', function (req, res) {
 app.post('/api/login', function (req, res) {
     var userName = req.body.userName;
     var password = req.body.password;
-    var valid;
-    var index;
-    for (var i = 0; i < db.users.length; i++) {
-        if ((userName == db.users[i].userName) && (password == db.users[i].password)) {
-            //if (db.users.filter((userName) => db.users.userName === userName && db.users.password === password)) {
-            valid = true;
-            index = i;
-            return res.send('User has been login successfully  -  Index: ' + index);
-            break;
+    const user = db.users.filter((user) =>{
+        if ((userName == user.userName) && (user.password == password)) {
+            return true
         }
         else {
-            return res.send('Username or password not correct.');
+            return false
         }
+    })
+    if (user){
+        return res.send(user);
+    } else {
+        return res.send ('Username or password not correct.');
     }
 });
-
 
 app.listen(PORT, HOST);
 console.log(`Running on http://${HOST}:${PORT}`);
