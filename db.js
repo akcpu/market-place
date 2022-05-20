@@ -14,7 +14,7 @@ db.users = [{
     email: "john2@doe.com"
 },]
 
-db.users = [{
+db.products = [{
     id: 1,
     name: "Product1",
     price : 1000,

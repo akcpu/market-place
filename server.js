@@ -20,21 +20,21 @@ app.get('/', function (req, res) {
 });
 
 // GET /api/users
-app.get('/api/users', function(req, res){
+app.get('/api/users', function (req, res) {
     return res.send(db.users);
 });
 
 // GET /api/users/:id
-app.get('/api/users/:id', function(req, res){
-    return res.send('get a user by user id '+ req.params.id);   
+app.get('/api/users/:id', function (req, res) {
+    return res.send('get a user by user id ' + req.params.id);
 });
 
 app.post('/api/users', function (req, res) {
-    var user ={
-        id: req.body.id,
+    var user = {
+        "id": req.body.id,
         "fullName": req.body.fullName,
         "userName": req.body.userName,
-        "password" : req.body.password,
+        "password": req.body.password,
         "email": req.body.email
     };
     db.users.push(user);
@@ -43,20 +43,20 @@ app.post('/api/users', function (req, res) {
 });
 
 // GET /api/products
-app.get('/api/products', function(req, res){
+app.get('/api/products', function (req, res) {
     res.send(db.products);
 });
 
 // GET /api/products/:id
-app.get('/api/products/:id', function(req, res){
-    return res.send('get a product by product id' + req.params.id);   
+app.get('/api/products/:id', function (req, res) {
+    return res.send('get a product by product id' + req.params.id);
 });
 
 app.post('/api/products', function (req, res) {
-    var product ={
+    var product = {
         id: req.body.id,
         "name": req.body.name,
-        price : req.body.price,
+        price: req.body.price,
         "desc": req.body.desc
     };
     db.products.push(product);
@@ -69,17 +69,20 @@ app.post('/api/login', function (req, res) {
     var password = req.body.password;
     var valid;
     var index;
-        for (var i=0; i <db.users.length; i++) {
-            if ((userName == db.users[i].userName) && (password == db.users[i].password)) {
-                valid = true;
-                index = i;
-                break;
-            }
+    for (var i = 0; i < db.users.length; i++) {
+        if ((userName == db.users[i].userName) && (password == db.users[i].password)) {
+            valid = true;
+            index = i;
+            break;
         }
-    
+        else {
+            valid = false;
+        }
+    }
+
     return res.send('User has been login successfully' + valid + index);
 });
 
 
-app.listen(PORT,HOST);
+app.listen(PORT, HOST);
 console.log(`Running on http://${HOST}:${PORT}`);
