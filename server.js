@@ -14,7 +14,7 @@ var bodyParser = require('body-parser');
 var users =[{
     id: 10,
     name: "John Doe",
-    age : 23,
+    pass : "23",
     email: "john@doe.com"
 }];
 
@@ -40,15 +40,15 @@ app.get('/api/users', function(req, res){
 
 // GET /api/users/:id
 app.get('/api/users/:id', function(req, res){
-    return res.send('get a user by user id');   
+    return res.send('get a user by user id '+ req.params.id);   
 });
 
 /* POST /api/users
     {
         "user": {
-           "id": 3,
+            id: 3,
             "name": "Test User",
-            "age" : 20,
+            "pass" : "20",
             "email": "test@test.com"
         }
     }
@@ -56,9 +56,9 @@ app.get('/api/users/:id', function(req, res){
 app.post('/api/users', function (req, res) {
     var user ={
         id: req.body.id,
-        name: req.body.name,
-        age : req.body.age,
-        email: req.body.email
+        "name": req.body.name,
+        "pass" : req.body.pass,
+        "email": req.body.email
     };
     users.push(user);
 
@@ -72,7 +72,7 @@ app.get('/api/products', function(req, res){
 
 // GET /api/products/:id
 app.get('/api/products/:id', function(req, res){
-    return res.send('get a product by product id'+req.id);   
+    return res.send('get a product by product id' + req.params.id);   
 });
 
 /* POST /api/products
@@ -87,15 +87,33 @@ app.get('/api/products/:id', function(req, res){
 */
 app.post('/api/products', function (req, res) {
     var product ={
-        id: 3,
-        name: "John Doe3",
-        price : 26,
-        "desc": "product3 desc"
+        id: req.body.id,
+        "name": req.body.name,
+        price : req.body.age,
+        "desc": req.body.email
     };
     products.push(product);
 
     return res.send('product has been added successfully');
 });
 
+
+app.post('/api/login', function (req, res) {
+    var userName = req.body.name;
+    var pass = req.body.pass;
+    var valid;
+    var index;
+        for (var i=0; i <users.length; i++) {
+            if ((userName == users[i].user) && (pass == users[i].pass)) {
+                valid = true;
+                index = i;
+                break;
+            }
+        }
+    
+    return res.send('User has been login successfully' + valid + index);
+});
+
+
 app.listen(PORT,HOST);
-console.log('Running on http://${HOST}:${PORT}');
+console.log(`Running on http://${HOST}:${PORT}`);
