@@ -1,35 +1,29 @@
 let db = {}
 db.users = [{
-    "id": "1",
-    "firstname": "user",
-    "lastname": "user",
-    "email": "uuser@example.com",
-    "born_date": "17.06.2020",
-    "password": "123123",
-    "phone_number": "123123123",
-    "description": "firstdescription"
+    id: 10,
+    name: "John Doe",
+    pass : "23",
+    email: "john@doe.com"
 },
 {
-    "id": "2",
-    "firstname": "user2",
-    "lastname": "user2",
-    "email": "uuser3@example.com",
-    "born_date": "17.06.2021",
-    "password": "111111",
-    "phone_number": "123123123",
-    "description": "firstdescription"
+    id: 11,
+    name: "Johni",
+    pass : "24",
+    email: "johni@doe.com"
 },]
 
+db.users = [{
+    id: 1,
+    name: "Product1",
+    price : 1000,
+    "desc": "product1 desc"
+},
+{
+    id: 2,
+    name: "Product2",
+    price : 2000,
+    "desc": "product2 desc"
+},]
 
-db.users.push({userName: 'armank',pass:'paas', name: 'arman'})
-
-return db.users
-
-User logged in
-Username or password not correct.
-
-
-export default function sum(x, y) {
-    return x + y
-  }
+module.exports = db
   
