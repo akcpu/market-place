@@ -73,14 +73,14 @@ app.post('/api/login', function (req, res) {
         if ((userName == db.users[i].userName) && (password == db.users[i].password)) {
             valid = true;
             index = i;
+            return res.send('User has been login successfully  -  Index: ' + index);
             break;
         }
         else {
             valid = false;
+                return res.send('Username or password not correct.');
         }
     }
-
-    return res.send('User has been login successfully' + valid + index);
 });
 
 
