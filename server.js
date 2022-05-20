@@ -12,7 +12,7 @@ const app = express();
 var bodyParser = require('body-parser');
 
 var users =[{
-    id: 1,
+    id: 10,
     name: "John Doe",
     age : 23,
     email: "john@doe.com"
@@ -35,7 +35,7 @@ app.get('/', function (req, res) {
 
 // GET /api/users
 app.get('/api/users', function(req, res){
-    res.send(users);
+    return res.send(users);
 });
 
 // GET /api/users/:id
@@ -54,13 +54,13 @@ app.get('/api/users/:id', function(req, res){
     }
 */
 app.post('/api/users', function (req, res) {
-    var user2 ={
-        id: 2,
-        name: "John Doe0",
-        age : 24,
-        email: "john0@doe.com"
+    var user ={
+        id: req.body.id,
+        name: req.body.name,
+        age : req.body.age,
+        email: req.body.email
     };
-    users.push(user2);
+    users.push(user);
 
     return res.send('User has been added successfully');
 });
