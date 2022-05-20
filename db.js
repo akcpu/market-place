@@ -28,4 +28,3 @@ db.products = [{
 },]
 
 module.exports = db
-  

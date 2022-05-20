@@ -1,11 +1,9 @@
 'use strict';
 const express = require('express');
-const db = require('./db.js');
-let module = await import ('./auth/handler.js');
-
-// var fs = require('./auth/handler');
-// var fs2 = require('./users/handler');
-// var fs3 = require('./products/handler');
+//const db = require('./db.js');
+const { login } = require('./auth/handler');
+const { getUsers, getUserById, setUser } = require('./users/handler');
+const { getproducts, getProductById, setProduct } = require('./products/handler');
 
 //constants
 const PORT = 8080;
@@ -24,6 +22,16 @@ app.use(bodyParser.json());
 app.get('/', function (req, res) {
     return res.send('Hello World..');
 });
+
+app.post('/api/login', login);
+
+app.get('/api/users', getUsers);
+app.get('/api/users/:id', getUserById);
+app.post('/api/users', setUser);
+
+app.get('/api/products', getproducts);
+app.get('/api/products/:id', getProductById);
+app.post('/api/products', setProduct);
 
 app.listen(PORT, HOST);
 console.log(`Running on http://${HOST}:${PORT}`);

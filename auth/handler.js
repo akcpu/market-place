@@ -1,7 +1,10 @@
-app.post('/api/login', function (req, res) {
+const db = require('../db');
+
+//POST /api/login
+exports.login = function (req, res) {
     var userName = req.body.userName;
     var password = req.body.password;
-    const user = db.users.filter((user) =>{
+    const user = db.users.filter((user) => {
         if ((userName == user.userName) && (user.password == password)) {
             return true
         }
@@ -9,9 +12,9 @@ app.post('/api/login', function (req, res) {
             return false
         }
     })
-    if (user){
+    if (user) {
         return res.send(user);
     } else {
-        return res.send ('Username or password not correct.');
+        return res.send('Username or password not correct.');
     }
-});
+};
