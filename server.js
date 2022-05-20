@@ -69,19 +69,22 @@ app.post('/api/login', function (req, res) {
     var password = req.body.password;
     var valid;
     var index;
-    //for (var i = 0; i < db.users.length; i++) {
-        //if ((userName == db.users[i].userName) && (password == db.users[i].password)) {
-        if (db.users.filter((userName) => db.users.userName === userName && db.users.password === password)) {
+    for (var i = 0; i < db.users.length; i++) {
+        if ((userName == db.users[i].userName) && (password == db.users[i].password)) {
+        //if (db.users.filter((userName) => db.users.userName === userName && db.users.password === password)) {
             valid = true;
-            //index = i;
-            return res.send('User has been login successfully');
-            //break;
+            index = i;
+            return res.send('User has been login successfully  -  Index: ' + index);
+            break;
         }
         else {
             valid = false;
                 return res.send('Username or password not correct.');
         }
-    //}
+
+        if(users.filter((user) => user.name === username && user.pass === password))
+        valid = true;
+    }
 });
 
 
