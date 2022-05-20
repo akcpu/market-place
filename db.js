@@ -1,15 +1,17 @@
 let db = {}
 db.users = [{
-    id: 10,
-    name: "John Doe",
-    pass : "23",
+    id: 11,
+    fullName: "John Doe",
+    userName: "John",
+    password : "23",
     email: "john@doe.com"
 },
 {
-    id: 11,
-    name: "Johni",
-    pass : "24",
-    email: "johni@doe.com"
+    id: 12,
+    fullName: "John2 Doe",
+    userName: "John2",
+    password : "24",
+    email: "john2@doe.com"
 },]
 
 db.users = [{

@@ -29,21 +29,12 @@ app.get('/api/users/:id', function(req, res){
     return res.send('get a user by user id '+ req.params.id);   
 });
 
-/* POST /api/users
-    {
-        "user": {
-            id: 3,
-            "name": "Test User",
-            "pass" : "20",
-            "email": "test@test.com"
-        }
-    }
-*/
 app.post('/api/users', function (req, res) {
     var user ={
         id: req.body.id,
-        "name": req.body.name,
-        "pass" : req.body.pass,
+        "fullName": req.body.fullName,
+        "userName": req.body.userName,
+        "password" : req.body.password,
         "email": req.body.email
     };
     db.users.push(user);
@@ -61,36 +52,25 @@ app.get('/api/products/:id', function(req, res){
     return res.send('get a product by product id' + req.params.id);   
 });
 
-/* POST /api/products
-    {
-        "product": {
-           "id": 3,
-            "name": "Test User",
-            "price" : 20,
-            "desc": "product desc"
-        }
-    }
-*/
 app.post('/api/products', function (req, res) {
     var product ={
         id: req.body.id,
         "name": req.body.name,
-        price : req.body.age,
-        "desc": req.body.email
+        price : req.body.price,
+        "desc": req.body.desc
     };
     db.products.push(product);
 
     return res.send('product has been added successfully');
 });
 
-
 app.post('/api/login', function (req, res) {
-    var userName = req.body.name;
-    var pass = req.body.pass;
+    var userName = req.body.userName;
+    var password = req.body.password;
     var valid;
     var index;
         for (var i=0; i <db.users.length; i++) {
-            if ((userName == db.users[i].user) && (pass == db.users[i].pass)) {
+            if ((userName == db.users[i].userName) && (password == db.users[i].password)) {
                 valid = true;
                 index = i;
                 break;
