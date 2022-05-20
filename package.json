@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "Node.js on Docker",
     "author": "Arman Kiani <armankianipm@gmail.com>",
+    "type":"module",
     "main": "server.js",
     "scripts": {
         "start": "node server.js"
