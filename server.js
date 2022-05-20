@@ -1,6 +1,6 @@
 'use strict';
 const express = require('express');
-
+const db = require('./db.js');
 //constants
 const PORT = 8080;
 const HOST = '0.0.0.0';
@@ -10,20 +10,6 @@ const app = express();
 
 // for parsing the body in POST request
 var bodyParser = require('body-parser');
-
-var users =[{
-    id: 10,
-    name: "John Doe",
-    pass : "23",
-    email: "john@doe.com"
-}];
-
-var products =[{
-    id: 1,
-    name: "John Doe",
-    price : 23,
-    "desc": "product desc"
-}];
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -35,7 +21,7 @@ app.get('/', function (req, res) {
 
 // GET /api/users
 app.get('/api/users', function(req, res){
-    return res.send(users);
+    return res.send(db.users);
 });
 
 // GET /api/users/:id
@@ -60,14 +46,14 @@ app.post('/api/users', function (req, res) {
         "pass" : req.body.pass,
         "email": req.body.email
     };
-    users.push(user);
+    db.users.push(user);
 
     return res.send('User has been added successfully');
 });
 
 // GET /api/products
 app.get('/api/products', function(req, res){
-    res.send(products);
+    res.send(db.products);
 });
 
 // GET /api/products/:id
@@ -92,7 +78,7 @@ app.post('/api/products', function (req, res) {
         price : req.body.age,
         "desc": req.body.email
     };
-    products.push(product);
+    db.products.push(product);
 
     return res.send('product has been added successfully');
 });
@@ -103,8 +89,8 @@ app.post('/api/login', function (req, res) {
     var pass = req.body.pass;
     var valid;
     var index;
-        for (var i=0; i <users.length; i++) {
-            if ((userName == users[i].user) && (pass == users[i].pass)) {
+        for (var i=0; i <db.users.length; i++) {
+            if ((userName == db.users[i].user) && (pass == db.users[i].pass)) {
                 valid = true;
                 index = i;
                 break;
