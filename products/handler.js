@@ -1,14 +1,14 @@
-const db = require('../db');
-
+//const db = require('../db');
+const Products = require('../models/ models/product');  
 // GET /api/products
 exports.getproducts = function (req, res) {
-    res.send(db.products);
+    res.send(Products);
 }
 
 // GET /api/products/:id
 exports.getProductById = function (req, res) {
     var reqId = req.params.id;
-    const product = db.products.filter((product) => {
+    const product = Products.filter((product) => {
         if ((reqId == product.id)) {
             return true
         }
@@ -31,7 +31,7 @@ exports.setProduct = function (req, res) {
         price: req.body.price,
         "desc": req.body.desc
     };
-    db.products.push(product);
+    Products.push(product);
 
     return res.send('product has been added successfully');
 }

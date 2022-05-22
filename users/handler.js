@@ -1,14 +1,14 @@
-const db = require('../db');
-
+//const db = require('../db');
+const User = require('../models/user');  
 // GET /api/users
 exports.getUsers = function (req, res) {
-    return res.send(db.users);
+    return res.send(User);
 };
 
 // GET /api/users/:id
 exports.getUserById = function (req, res) {
     var reqId = req.params.id;
-    const user = db.users.filter((user) => {
+    const user = User.filter((user) => {
         if ((reqId == user.id)) {
             return true
         }
@@ -32,7 +32,7 @@ exports.setUser = function (req, res) {
         "password": req.body.password,
         "email": req.body.email
     };
-    db.users.push(user);
+    User.push(user);
 
     return res.send('User has been added successfully');
 };
