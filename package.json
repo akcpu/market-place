@@ -1,7 +1,7 @@
 {
-    "name": "docker_web_app",
+    "name": "market-palace",
     "version": "1.0.0",
-    "description": "Node.js on Docker",
+    "description": "Node.js market palace on Docker",
     "author": "Arman Kiani <armankianipm@gmail.com>",
     "main": "server.js",
     "scripts": {
