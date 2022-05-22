@@ -2,7 +2,7 @@
 const Products = require('../models/product');
 // GET /api/products
 exports.getproducts = function (req, res) {
-    res.send(Products);
+    res.send(Products)
 }
 
 // GET /api/products/:id
@@ -25,13 +25,25 @@ exports.getProductById = function (req, res) {
 
 // POST /api/products
 exports.setProduct = function (req, res) {
-    var product = {
-        id: req.body.id,
-        "name": req.body.name,
-        price: req.body.price,
-        "desc": req.body.desc
-    };
-    Products.push(product);
+      const product = new Product({
+        'id': req.body.id,
+        'name': req.body.name,
+        'price': req.body.price,
+        'desc': req.body.desc
+      })
+    //   product.id = req.body.id;
+    //   product.name = req.body.name;
+    //   product.price = req.body.price;
+    //   product.desc = req.body.desc;
+    //   product.save();
+      product.save().then(product => res.redirect('/'));
+    // var product = {
+    //     id: req.body.id,
+    //     "name": req.body.name,
+    //     price: req.body.price,
+    //     "desc": req.body.desc
+    // };
+    // Products.push(product);
 
-    return res.send('product has been added successfully');
+    // return res.send('product has been added successfully');
 }
