@@ -6,7 +6,7 @@ var mongoose = require('mongoose');
 // Connect to MongoDB
 mongoose
   .connect(
-    'mongodb://mongo:27017/docker-node-mongo',
+    'mongodb://mongo:27017/market-place',
     { useNewUrlParser: true }
   )
   .then(() => console.log('MongoDB Connected'))
