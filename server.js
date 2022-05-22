@@ -3,13 +3,14 @@ const express = require('express');
 //const db = require('./db.js');
 var mongoose = require('mongoose');
 
+// Connect to MongoDB
 mongoose
-	.connect(
-	'mongodb://mongo:27017/mydb',
-	 { useNewUrlParser: true }
-	 )
-	 .then(() => console.log('MongoDB Connected'))
-	 .catch(err => console.log(err));
+  .connect(
+    'mongodb://mongo:27017/docker-node-mongo',
+    { useNewUrlParser: true }
+  )
+  .then(() => console.log('MongoDB Connected'))
+  .catch(err => console.log(err));
      
 const { login } = require('./auth/handler');
 const { getUsers, getUserById, setUser } = require('./users/handler');
