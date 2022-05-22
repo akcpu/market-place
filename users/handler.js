@@ -1,5 +1,5 @@
 //const db = require('../db');
-const User = require('../models/user');  
+const User = require('../models/user');
 // GET /api/users
 exports.getUsers = function (req, res) {
     return res.send(User);

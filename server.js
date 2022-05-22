@@ -31,7 +31,7 @@ app.use(bodyParser.json());
 
 // GET /
 app.get('/', function (req, res) {
-    return res.send('Hello World..');
+  return res.send('Hello World..');
 });
 
 app.post('/api/login', login);

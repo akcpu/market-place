@@ -1,5 +1,5 @@
 //const db = require('../db');
-const User = require('../models/user');  
+const User = require('../models/user');
 //POST /api/login
 exports.login = function (req, res) {
     var userName = req.body.userName;
