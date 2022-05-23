@@ -38,7 +38,7 @@ exports.setProduct = function (req, res) {
     //   product.price = req.body.price;
     //   product.desc = req.body.desc;
     //   product.save();
-    product.save().then(Products => res.redirect('/'));
+    product.save().then(product => res.redirect('/'));
     // var product = {
     //     id: req.body.id,
     //     "name": req.body.name,
