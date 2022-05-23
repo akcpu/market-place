@@ -2,7 +2,9 @@
 const Products = require('../models/product');
 // GET /api/products
 exports.getproducts = function (req, res) {
-    res.send(Products)
+    Product.find()
+    .then(products => res.send(products))
+    .catch(err => res.status(404).json({ msg: 'No products found' }));
 }
 
 // GET /api/products/:id

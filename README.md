@@ -12,6 +12,7 @@ docker-compose down
 
 # To re-build
 docker-compose build
+sudo docker-compose up --build -d
 
 # To node
 node server.js

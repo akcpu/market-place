@@ -6,8 +6,7 @@ var mongoose = require('mongoose');
 // Connect to MongoDB
 mongoose
   .connect(
-    'mongodb://mongo:27017/market-place',
-    { useNewUrlParser: true, useUnifiedTopology: true}
+    'mongodb://mongo:27017/market-place'
   )
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.log(err));
