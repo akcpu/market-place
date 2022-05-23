@@ -5,19 +5,22 @@ const Schema = mongoose.Schema;
 const ProductSchema = new Schema({
   id: {
     type: Number,
-    required: true
+    required: true,
+    default: 0.0,
   },
   name: {
     type: String,
-    required: true
+    required: true,
+    default: "tv",
   },
   price: {
     type: String,
-    required: true
+    required: true,
+    default: "3000",
   },
   desc: {
     type: String,
-    default: "Product Description"
+    default: "Product Description",
   }
 });
 
