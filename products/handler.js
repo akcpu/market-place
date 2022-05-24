@@ -2,32 +2,29 @@
 const Products = require('../models/product');
 // GET /api/products
 exports.getproducts = function (req, res) {
-    Product.find()
-    .then(products => res.send(products))
+    Products.find()
+    .then(product => res.send(product))
     .catch(err => res.status(404).json({ msg: 'No products found' }));
 }
 
 // GET /api/products/:id
 exports.getProductById = function (req, res) {
-    var reqId = req.params.id;
-    const product = Products.filter((product) => {
-        if ((reqId == product.id)) {
-            return true
+    try{
+        if(req.params.id){
+            Products.findOne({ id: req.params.id }, function (err, product) {
+                return res.send(product);
+            });
+        }else{
+            return res.send('ID not correct.');
         }
-        else {
-            return false
-        }
-    })
-    if (product) {
-        return res.send(product);
-    } else {
-        return res.send('ID not correct.');
-    }
+      }catch(error){
+        throw error
+      }
 }
 
 // POST /api/products
 exports.setProduct = function (req, res) {
-      const product = new Product({
+      const newProduct = new Product({
         "id": req.body.id,
         "name": req.body.name,
         "price": req.body.price,
@@ -38,7 +35,7 @@ exports.setProduct = function (req, res) {
     //   product.price = req.body.price;
     //   product.desc = req.body.desc;
     //   product.save();
-    product.save().then(product => res.redirect('/'));
+    newProduct.save().then(product => res.send(product));
     // var product = {
     //     id: req.body.id,
     //     "name": req.body.name,
