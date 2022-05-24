@@ -1,38 +1,37 @@
 //const db = require('../db');
-const User = require('../models/user');
+const Users = require('../models/user');
 // GET /api/users
 exports.getUsers = function (req, res) {
-    return res.send(User);
+    Users.find()
+    .then(users => res.send(users))
+    .catch(err => res.status(404).json({ msg: 'No user found' }));
 };
 
 // GET /api/users/:id
 exports.getUserById = function (req, res) {
-    var reqId = req.params.id;
-    const user = User.filter((user) => {
-        if ((reqId == user.id)) {
-            return true
+    try{
+        if(req.params.id){
+            Users.findOne({ id: req.params.id }, function (err, users) {
+                return res.send(users);
+            });
+        }else{
+            return res.send('ID not correct.');
         }
-        else {
-            return false
-        }
-    })
-    if (user) {
-        return res.send(user);
-    } else {
-        return res.send('ID not correct.');
-    }
+      }catch(error){
+        throw error
+      }
 };
 
 // POST /api/users
 exports.setUser = function (req, res) {
-    var user = {
+    const newUser = new User({
         "id": req.body.id,
         "fullName": req.body.fullName,
         "userName": req.body.userName,
         "password": req.body.password,
         "email": req.body.email
-    };
-    User.push(user);
+      })
 
+      newUser.save().then(users => res.send(users));
     return res.send('User has been added successfully');
 };

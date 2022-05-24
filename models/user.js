@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const UserSchema = new Schema({
+const UsersSchema = new Schema({
   id: {
     type: Number,
     required: true
@@ -25,4 +25,4 @@ const UserSchema = new Schema({
   }
 });
 
-module.exports = User = mongoose.model('user', UserSchema);
+module.exports = Users = mongoose.model('users', UsersSchema);
