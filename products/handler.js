@@ -1,8 +1,9 @@
 //const db = require('../db');
 const Product = require('../models/product');
+
 // GET /api/products
 exports.getproducts = function (req, res) {
-    Product.find()
+    Products.find()
     .then(product => res.send(product))
     .catch(err => res.status(404).json({ msg: 'No products found' }));
 }
@@ -11,7 +12,7 @@ exports.getproducts = function (req, res) {
 exports.getProductById = function (req, res) {
     try{
         if(req.params.id){
-            Product.findOne({ id: req.params.id }, function (err, product) {
+            Products.findOne({ id: req.params.id }, function (err, product) {
                 return res.send(product);
             });
         }else{
@@ -30,19 +31,5 @@ exports.setProduct = function (req, res) {
         "price": req.body.price,
         "desc": req.body.desc
       })
-    //   product.id = req.body.id;
-    //   product.name = req.body.name;
-    //   product.price = req.body.price;
-    //   product.desc = req.body.desc;
-    //   product.save();
     newProduct.save().then(product => res.send(product));
-    // var product = {
-    //     id: req.body.id,
-    //     "name": req.body.name,
-    //     price: req.body.price,
-    //     "desc": req.body.desc
-    // };
-     //Products.push(product);
-
-    // return res.send('product has been added successfully');
 }
