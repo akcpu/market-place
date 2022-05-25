@@ -1,8 +1,8 @@
 //const db = require('../db');
-const Products = require('../models/product');
+const Product = require('../models/product');
 // GET /api/products
 exports.getproducts = function (req, res) {
-    Products.find()
+    Product.find()
     .then(product => res.send(product))
     .catch(err => res.status(404).json({ msg: 'No products found' }));
 }
@@ -11,7 +11,7 @@ exports.getproducts = function (req, res) {
 exports.getProductById = function (req, res) {
     try{
         if(req.params.id){
-            Products.findOne({ id: req.params.id }, function (err, product) {
+            Product.findOne({ id: req.params.id }, function (err, product) {
                 return res.send(product);
             });
         }else{

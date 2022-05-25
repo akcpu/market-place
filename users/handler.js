@@ -1,8 +1,8 @@
 //const db = require('../db');
-const Users = require('../models/user');
+const User = require('../models/user');
 // GET /api/users
 exports.getUsers = function (req, res) {
-    Users.find()
+    User.find()
     .then(users => res.send(users))
     .catch(err => res.status(404).json({ msg: 'No user found' }));
 };
@@ -11,7 +11,7 @@ exports.getUsers = function (req, res) {
 exports.getUserById = function (req, res) {
     try{
         if(req.params.id){
-            Users.findOne({ id: req.params.id }, function (err, users) {
+            User.findOne({ id: req.params.id }, function (err, users) {
                 return res.send(users);
             });
         }else{
