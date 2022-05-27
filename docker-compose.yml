@@ -1,13 +1,15 @@
 version: '3'
 services:
   app:
-    container_name: market-place
+    container_name: "${containername}"
     restart: always
     build: .
     ports:
       - '80:8080'
     external_links:
       - mongo
+    env_file:
+      - ./.env
   mongo:
     container_name: mongo
     image: mongo

@@ -9,5 +9,4 @@ exports.login = function (req, res) {
                 return res.send('Username or password not correct.');
             }
         });
-
 };
