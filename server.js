@@ -1,6 +1,7 @@
 'use strict';
 const express = require('express');
 var mongoose = require('mongoose');
+
 //constants
 const PORT = 8080;
 const HOST = '0.0.0.0';
@@ -8,15 +9,13 @@ const HOST = '0.0.0.0';
 // Connect to MongoDB
 mongoose
   .connect(
-    'mongodb://mongo:27017/market-place'
+    'mongodb://127.0.0.1:27017/market-place'
   )
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.log(err));
-//const db = require('./models/db');   
 
 //App
 const app = express();
-
 // for parsing the body in POST request
 var bodyParser = require('body-parser');
 

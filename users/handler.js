@@ -1,4 +1,3 @@
-//const db = require('../db');
 const User = require('./database/user');
 // GET /api/users
 exports.getUsers = function (req, res) {

@@ -1,4 +1,3 @@
-//const db = require('../db');
 const User = require('../users/database/user');
 //POST /api/login
 exports.login = function (req, res) {
