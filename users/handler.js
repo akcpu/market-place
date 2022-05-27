@@ -1,4 +1,4 @@
-const User = require('./database/user');
+const User = require('./models/user');
 // GET /api/users
 exports.getUsers = function (req, res) {
     User.find()

@@ -1,4 +1,4 @@
-const User = require('../users/database/user');
+const User = require('../users/models/user');
 //POST /api/login
 exports.login = function (req, res) {
     User.findOne({ userName: req.body.userName, password: req.body.password }, function (err, user) {

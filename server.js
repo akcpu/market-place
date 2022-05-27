@@ -9,7 +9,7 @@ const HOST = '0.0.0.0';
 // Connect to MongoDB
 mongoose
   .connect(
-    'mongodb://127.0.0.1:27017/market-place'
+    'mongodb://mongo:27017/market-place'
   )
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.log(err));
