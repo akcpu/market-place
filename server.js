@@ -1,19 +1,20 @@
 'use strict';
 const express = require('express');
-var mongoose = require('mongoose');
-// const userConnect = require('./users/database/index');
+const mongoose = require('mongoose');
+const userConnect = require('./users/database/index');
+const productConnect = require('./products/database/index');
  
 //constants
 const PORT = 8080;
 const HOST = '0.0.0.0';
 
-// Connect to MongoDB
-mongoose
-  .connect(
-    'mongodb://mongo:27017/market-place'
-  )
-  .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.log(err));
+// // Connect to MongoDB
+// mongoose
+//   .connect(
+//     'mongodb://mongo:27017/market-place'
+//   )
+//   .then(() => console.log('MongoDB Connected'))
+//   .catch(err => console.log(err));
 
 //App
 const app = express();

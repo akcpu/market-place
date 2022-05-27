@@ -3,4 +3,3 @@
 exports.appConfig = {
   host: process.env.mongo_host,
 }
-
