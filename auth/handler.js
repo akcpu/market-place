@@ -1,20 +1,14 @@
 //const db = require('../db');
-const User = require('../models/user');
+const User = require('../users/database/user');
 //POST /api/login
 exports.login = function (req, res) {
-    var userName = req.body.userName;
-    var password = req.body.password;
-    const user = User.filter((user) => {
-        if ((userName == user.userName) && (user.password == password)) {
-            return true
-        }
-        else {
-            return false
-        }
-    })
-    if (user) {
-        return res.send(user);
-    } else {
-        return res.send('Username or password not correct.');
-    }
+    User.findOne({ userName: req.body.userName, password: req.body.password }, function (err, user) {
+        if ((req.body.userName == user.userName) && (user.password == req.body.password)) {
+                return res.send(user);
+            }
+            else {
+                return res.send('Username or password not correct.');
+            }
+        });
+
 };
