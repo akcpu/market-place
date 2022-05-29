@@ -1,33 +1,20 @@
 'use strict';
 const express = require('express');
 const mongoose = require('mongoose');
-const userConnect = require('./users/database/index');
-const productConnect = require('./products/database/index');
- 
-//constants
+const app = express();
+var bodyParser = require('body-parser');
 const PORT = 8080;
 const HOST = '0.0.0.0';
 
-// // Connect to MongoDB
-// mongoose
-//   .connect(
-//     'mongodb://mongo:27017/market-place'
-//   )
-//   .then(() => console.log('MongoDB Connected'))
-//   .catch(err => console.log(err));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
-//App
-const app = express();
-// for parsing the body in POST request
-var bodyParser = require('body-parser');
-
-// GET /
+const userConnect = require('./users/database/index');
+const productConnect = require('./products/database/index');
+ 
 app.get('/', function (req, res) {
   return res.send('Hello World..');
 });
-
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
 
 const authRouter = require('./auth/router/index')
 app.use(authRouter)

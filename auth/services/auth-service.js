@@ -1,0 +1,5 @@
+const User = require('../../users/models/user');
+
+exports.login = function (userName , password) {
+    return User.findOne({ userName: userName, password:password })
+}

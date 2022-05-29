@@ -1,12 +1,15 @@
-const User = require('../users/models/user');
+const authService = require('./services/auth-service')
 //POST /api/login
 exports.login = function (req, res) {
-    User.findOne({ userName: req.body.userName, password: req.body.password }, function (err, user) {
-        if ((req.body.userName == user.userName) && (user.password == req.body.password)) {
-                return res.send(user);
-            }
-            else {
-                return res.send('Username or password not correct.');
-            }
-        });
+    try {
+        if (req.body.userName) {
+            authService.login(req.body.userName, req.body.password)
+                .then((users) => {res.send(users)})
+                .catch(err => res.status(404).json({ msg: 'No user found' + err}));
+        } else {
+            return res.send('ID not correct.');
+        }
+    } catch (error) {
+        throw error
+    }
 };
