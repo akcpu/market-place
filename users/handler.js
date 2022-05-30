@@ -9,14 +9,9 @@ exports.getUsers = function (req, res) {
 // GET /api/users/:id
 exports.getUserById = function (req, res) {
     try {
-        if (req.params.id) {
-            userService.getUserById(req.params.id)
-                .then((users) => { res.send(users) })
-                .catch(err => res.status(404).json({ msg: 'No user found' + err}));
-            // return res.send(userService.getUserById(req.params.id));
-        } else {
-            return res.send('ID not correct.');
-        }
+        userService.getUserById(req.params.id)
+            .then((users) => { res.send(users) })
+            .catch(err => res.status(404).json({ msg: 'No user found' }));
     } catch (error) {
         throw error
     }

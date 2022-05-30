@@ -1,6 +1,6 @@
 const User = require('../models/user');
 exports.getUserById = function (userId) {
-    return User.findOne({ id: userId });
+    return User.findOne({ id: userId })
 }
 exports.getUsers = function () {
     return User.find()
