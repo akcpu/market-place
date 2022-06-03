@@ -14,5 +14,5 @@ exports.setProduct = function (newProduct) {
         "desc": newProduct.desc
     })
 
-    setProduct.save().then(products => res.send(products));
+    return setProduct.save();
 }

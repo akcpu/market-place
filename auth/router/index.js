@@ -1,7 +1,7 @@
 const express = require('express')
 const authRouter = express.Router()
 
-const { login } = require('../handler');
+const { login } = require('../handlers');
 
 authRouter.post('/api/login', login);
 

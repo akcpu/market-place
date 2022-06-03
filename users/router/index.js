@@ -1,7 +1,7 @@
 const express = require('express')
 const userRouter = express.Router()
 
-const { getUsers, getUserById, setUser } = require('../handler');
+const { getUsers, getUserById, setUser } = require('../handlers');
 
 userRouter.get('/api/users', getUsers);
 userRouter.get('/api/users/:id', getUserById);

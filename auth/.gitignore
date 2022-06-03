@@ -8,8 +8,6 @@
 
 # production
 /build
-/data
-/del
 
 # misc
 .DS_Store

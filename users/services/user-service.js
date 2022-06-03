@@ -14,6 +14,5 @@ exports.setUser = function (ruser) {
         "password": ruser.password,
         "email": ruser.email
     })
-
-    newUser.save().then(users => res.send(users));
+    return newUser.save();
 }
