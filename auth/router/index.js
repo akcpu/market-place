@@ -3,6 +3,6 @@ const authRouter = express.Router()
 
 const { login } = require('../handlers');
 
-authRouter.post('/api/login', login);
+authRouter.post('/auth/login', login);
 
 module.exports = authRouter
