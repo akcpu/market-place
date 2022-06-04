@@ -121,19 +121,23 @@
 
 
 
-
+# version: "3.9"
 services:
+  web:
+    build: './web'
+    ports:
+      - '3000:3000'
   users:
     build: './users'
     ports:
-      - '3000:3000'
+      - '3003:3000'
     depends_on:
       - db
     environment:
       - MONGO_DB_URI=mongodb://db/market-place
-    networks:
-      - outside
-      - default
+    # networks:
+    #   - outside
+    #   - default
 
   products:
     build: './products'
@@ -143,9 +147,9 @@ services:
       - db
     environment:
       - MONGO_DB_URI=mongodb://db/market-place
-    networks:
-      - outside
-      - default
+    # networks:
+    #   - outside
+    #   - default
 
   auth:
     build: './auth'
@@ -155,14 +159,28 @@ services:
       - db
     environment:
       - MONGO_DB_URI=mongodb://db/market-place
-    networks:
-      - outside
-      - default
+    # networks:
+    #   - outside
+    #   - default
 
   db:
     image: mongo
     ports:
       - '27017:27017'
-networks:
-  outside:
-    external: true
+  nginx:
+    image: nginx:latest
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./web/public:/srv/www/static
+      - ./default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - web
+      - users
+      - products
+      - auth
+
+# networks:
+#   outside:
+#     external: true
+#     driver: bridge

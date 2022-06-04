@@ -28,6 +28,11 @@ const express = require('express');
 const app = express();
 app.use(express.json());
 const handlers = require("./handlers");
+// http://localhost/auth/login
+// auth/signup
+// auth/reset-password
+// auth/verify_email
+
 const { DB_URI } = require("./config");
 const mongoose = require('mongoose');
 mongoose.connect(DB_URI);
