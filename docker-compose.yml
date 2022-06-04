@@ -1,176 +1,40 @@
-# version: '3'
-# services:
-#   app:
-#     container_name: "${containername}"
-#     restart: always
-#     build: .
-#     ports:
-#       - '80:8080'
-#     external_links:
-#       - mongo
-#     env_file:
-#       - ./.env
-#   mongo:
-#     container_name: mongo
-#     image: mongo
-#     ports:
-#       - '27017:27017'
-
-
-# services:
-#   user:
-#     build: './web'
-#     ports:
-#       - '3000:3000'
-
-#   product:
-#     build: './search'
-#     ports:
-#       - '3001:3000'
-#     depends_on:
-#       - db
-#     environment:
-#       - MONGO_DB_URI=mongodb://db/microservices
-
-#   auth:
-#     build: './books'
-#     ports:
-#       - '3002:3000'
-#     depends_on:
-#       - db
-#     environment:
-#       - MONGO_DB_URI=mongodb://db/microservices
-
-#   db:
-#     image: mongo
-#     ports:
-#       - '27017:27017'
-
-
-
-# services:
-#   users:
-#     build: './users'
-#     ports:
-#       - 3001:3000
-#     stdin_open: true
-#     volumes:
-#       - ./users:/usr/src/app
-#       - /usr/src/app/node_modules
-#     container_name: users
-#     restart: always
-#     networks:
-#       - market-Place
-#     depends_on:
-#       - mongo
-#     environment:
-#       - MONGO_DB_URI=mongodb://db/market-place
-
-#   auth:
-#     build: './auth'
-#     ports:
-#       - 3002:3000
-#     stdin_open: true
-#     volumes:
-#       - ./auth:/usr/src/app
-#       - /usr/src/app/node_modules
-#     container_name: auth
-#     restart: always
-#     networks:
-#       - market-Place
-#     depends_on:
-#       - users
-#       - mongo
-#     environment:
-#       - MONGO_DB_URI=mongodb://db/market-place
-
-#   product:
-#     container_name: products
-#     restart: always
-#     build: './products'
-#     volumes:
-#       - ./products:/usr/src/app
-#       - /usr/src/app/node_modules
-#     depends_on:
-#       - mongo
-#     networks:
-#       - express-mongo
-#       - market-Place
-#     expose: 
-#       - 3000
-#     environment:
-#       - MONGO_DB_URI=mongodb://db/market-place
-      
-#   mongo:
-#     container_name: mongo
-#     restart: always
-#     image: mongo
-#     volumes:
-#       - ./data:/data/db
-#     networks:
-#       - market-Place
-#       - express-mongo
-#     expose:
-#       - 27017
-# networks:
-#   market-Place:
-#     external: true
-#   express-mongo:
-
-
-
-
-
-# version: "3.9"
 services:
   web:
-    build: './web'
+    build: "./web"
     ports:
-      - '3000:3000'
+      - "3000:3000"
   users:
-    build: './users'
+    build: "./users"
     ports:
-      - '3003:3000'
+      - "3003:3000"
     depends_on:
       - db
     environment:
       - MONGO_DB_URI=mongodb://db/market-place
-    # networks:
-    #   - outside
-    #   - default
-
   products:
-    build: './products'
+    build: "./products"
     ports:
-      - '3001:3000'
+      - "3001:3000"
     depends_on:
       - db
     environment:
       - MONGO_DB_URI=mongodb://db/market-place
-    # networks:
-    #   - outside
-    #   - default
-
   auth:
-    build: './auth'
+    build: "./auth"
     ports:
-      - '3002:3000'
+      - "3002:3000"
     depends_on:
       - db
     environment:
       - MONGO_DB_URI=mongodb://db/market-place
-    # networks:
-    #   - outside
-    #   - default
-
   db:
     image: mongo
     ports:
-      - '27017:27017'
+      - "27017:27017"
   nginx:
     image: nginx:latest
     ports:
-      - '8080:8080'
+      - "8080:8080"
     volumes:
       - ./web/public:/srv/www/static
       - ./default.conf:/etc/nginx/conf.d/default.conf
@@ -179,8 +43,3 @@ services:
       - users
       - products
       - auth
-
-# networks:
-#   outside:
-#     external: true
-#     driver: bridge
