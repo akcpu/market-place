@@ -3,30 +3,35 @@ services:
     build: "./web"
     ports:
       - "3000:3000"
+    env_file:
+      - ./config/env/.web_config.env
   users:
     build: "./users"
     ports:
       - "3003:3000"
     depends_on:
       - db
-    environment:
-      - MONGO_DB_URI=mongodb://db/market-place
+    env_file:
+      - ./config/env/.users_config.env
+
   products:
     build: "./products"
     ports:
       - "3001:3000"
     depends_on:
       - db
-    environment:
-      - MONGO_DB_URI=mongodb://db/market-place
+    env_file:
+      - ./config/env/.products_config.env
+
   auth:
     build: "./auth"
     ports:
       - "3002:3000"
     depends_on:
       - db
-    environment:
-      - MONGO_DB_URI=mongodb://db/market-place
+    env_file:
+      - ./config/env/.auth_config.env
+
   db:
     image: mongo
     ports:
