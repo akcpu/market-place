@@ -14,7 +14,4 @@ docker-compose down
 docker-compose build
 sudo docker-compose up --build -d
 
-# To node
-node server.js
-
 ```

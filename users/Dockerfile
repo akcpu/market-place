@@ -1,10 +1,3 @@
-# FROM node:16
-# WORKDIR /usr/src/users
-# COPY package*.json ./
-
-# COPY . .
-# EXPOSE 3000
-# CMD [ "node", "server.js" ]
 FROM node:16
 
 COPY . /src
