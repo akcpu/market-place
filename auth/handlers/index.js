@@ -1,9 +1,9 @@
-const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const authService = require("../services/auth-service");
-
+const authUtil = require("../utils/auth-utils");
 const jwtKey = "my_secret_key";
 const jwtExpirySeconds = 300;
+const jwtalgorithm = "HS256";
 
 // POST /auth/register
 exports.register = function (req, res) {
@@ -50,11 +50,14 @@ exports.login = function (req, res) {
       .then((users) => {
         if (users.userName == userName && users.password == password) {
           // Create a new token with the username in the payload
-          // and which expires 300 seconds after issue
-          const token = jwt.sign({ userName }, jwtKey, {
-            algorithm: "HS256",
-            expiresIn: jwtExpirySeconds,
-          });
+          // and which expires 300 seconds (jwtExpirySeconds Variable) after issue
+          const token = authUtil.createToken(
+            userName,
+            jwtKey,
+            jwtalgorithm,
+            jwtExpirySeconds
+          );
+
           console.log("token:", token);
 
           // set the cookie as the token string, with a similar max age as the token
@@ -90,7 +93,7 @@ exports.welcome = function (req, res) {
     // Note that we are passing the key in this method as well. This method will throw an error
     // if the token is invalid (if it has expired according to the expiry time we set on sign in),
     // or if the signature does not match
-    payload = jwt.verify(token, jwtKey);
+    payload = authUtil.verifyToken(token, jwtKey);
   } catch (e) {
     if (e instanceof jwt.JsonWebTokenError) {
       // if the error thrown is because the JWT is unauthorized, return a 401 error
@@ -102,7 +105,7 @@ exports.welcome = function (req, res) {
 
   // Finally, return the welcome message to the user, along with their
   // username given in the token
-  res.send(`Welcome ${payload.userName}!`);
+  res.send(`Welcome ${Object.values(payload)[0]}!`);
 };
 
 exports.refresh = function (req, res) {
@@ -115,7 +118,7 @@ exports.refresh = function (req, res) {
 
   var payload;
   try {
-    payload = jwt.verify(token, jwtKey);
+    payload = authUtil.verifyToken(token, jwtKey);
   } catch (e) {
     if (e instanceof jwt.JsonWebTokenError) {
       return res.status(401).end();
@@ -127,18 +130,19 @@ exports.refresh = function (req, res) {
   // We ensure that a new token is not issued until enough time has elapsed
   // In this case, a new token will only be issued if the old token is within
   // 30 seconds of expiry. Otherwise, return a bad request status
-  const nowUnixSeconds = Math.round(Number(new Date()) / 1000);
-  if (payload.exp - nowUnixSeconds > 30) {
+  const nowUnixSeconds = authUtil.nowUnixSeconds;
+  if (Object.values(payload)[2] - nowUnixSeconds > 30) {
     return res.status(400).end();
   }
 
-  // Now, create a new token for the current user, with a renewed expiration time
-  const newToken = jwt.sign({ username: payload.username }, jwtKey, {
-    algorithm: "HS256",
-    expiresIn: jwtExpirySeconds,
-  });
+  const createToken = authUtil.createToken(
+    Object.values(payload)[0],
+    jwtKey,
+    jwtalgorithm,
+    jwtExpirySeconds
+  );
 
   // Set the new token as the users `token` cookie
-  res.cookie("token", newToken, { maxAge: jwtExpirySeconds * 1000 });
+  res.cookie("token", createToken, { maxAge: jwtExpirySeconds * 1000 });
   res.end();
 };
