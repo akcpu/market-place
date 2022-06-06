@@ -3,8 +3,8 @@ const productRrouter = express.Router();
 
 const { getproducts, getProductById, setProduct } = require("../handlers");
 
-productRrouter.get("/api/products", getproducts);
-productRrouter.get("/api/products/:id", getProductById);
-productRrouter.post("/api/products", setProduct);
+productRrouter.get("/products", getproducts);
+productRrouter.get("/products/:id", getProductById);
+productRrouter.post("/products", setProduct);
 
 module.exports = productRrouter;

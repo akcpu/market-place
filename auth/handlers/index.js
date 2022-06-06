@@ -37,7 +37,7 @@ exports.register = function (req, res) {
 
 exports.login = function (req, res) {
   // Get user input for credentials from JSON body
-  const { first_name, last_name, userName, email, password } = req.body;
+  const { userName, password } = req.body;
 
   // Validate user input
   if (!(userName && password)) {
@@ -60,7 +60,7 @@ exports.login = function (req, res) {
           // set the cookie as the token string, with a similar max age as the token
           // here, the max age is in milliseconds, so we multiply by 1000
           res.cookie("token", token, { maxAge: jwtExpirySeconds * 1000 });
-          //res.send(users);
+          res.send(users);
           res.end();
         } else {
           // return 401 error is username or password doesn't exist, or if password does
@@ -77,6 +77,7 @@ exports.login = function (req, res) {
 exports.welcome = function (req, res) {
   // We can obtain the session token from the requests cookies, which come with every request
   const token = req.cookies.token;
+  console.log("Request token:", token);
 
   // if the cookie is not set, return an unauthorized error
   if (!token) {
@@ -101,7 +102,7 @@ exports.welcome = function (req, res) {
 
   // Finally, return the welcome message to the user, along with their
   // username given in the token
-  res.send(`Welcome ${payload.username}!`);
+  res.send(`Welcome ${payload.userName}!`);
 };
 
 exports.refresh = function (req, res) {
