@@ -1,43 +1,48 @@
-const userBtn = document.getElementById('user-btn');
-const productBtn = document.getElementById('product-btn');
-const searchBtn = document.getElementById('search-btn');
-const searchResults = document.getElementById('matches');
+const userBtn = document.getElementById("user-btn");
+const productBtn = document.getElementById("product-btn");
+const searchBtn = document.getElementById("search-btn");
+const searchResults = document.getElementById("matches");
 
 const createUser = () => {
-  const URL ='http://localhost:8080/api/users';
-  const userId  = document.getElementById('user-id').value;
-  const userFullName  = document.getElementById('user-fullName').value;
-  const userUserName  = document.getElementById('user-userName').value;
-  const userPassword  = document.getElementById('user-password').value;
-  const userEmail  = document.getElementById('user-email').value;
+  const URL = "http://localhost:8080/api/users";
+  const userId = document.getElementById("user-id").value;
+  const userFullName = document.getElementById("user-fullName").value;
+  const userUserName = document.getElementById("user-userName").value;
+  const userPassword = document.getElementById("user-password").value;
+  const userEmail = document.getElementById("user-email").value;
   try {
     fetch(URL, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ id: userId ,fullName: userFullName ,userName: userUserName ,
-        password: userPassword ,email: userEmail }),
+      body: JSON.stringify({
+        id: userId,
+        fullName: userFullName,
+        userName: userUserName,
+        password: userPassword,
+        email: userEmail,
+      }),
     });
   } catch (error) {
     console.error(error);
   }
 };
 
-userBtn.addEventListener('click', (event) => {
+userBtn.addEventListener("click", (event) => {
   event.preventDefault();
   createUser();
 });
 
-productBtn.addEventListener('click', (event) => {
+productBtn.addEventListener("click", (event) => {
   event.preventDefault();
-  create('http://localhost:8080/api/products', 'product-name');
+  create("http://localhost:8080/api/products", "product-name");
 });
 
-searchBtn.addEventListener('click', (event) => {
+searchBtn.addEventListener("click", (event) => {
   event.preventDefault();
   try {
-    fetch('http://localhost:8080/api/search')
+    fetch("http://localhost:8080/api/search")
       .then((response) => response.json())
       .then((results) => {
         results.forEach((data) => {
