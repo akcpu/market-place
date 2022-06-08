@@ -1,9 +1,9 @@
-const bcrypt = require("bcryptjs");
-const authService = require("../services/auth-service");
-const authUtil = require("../utils/auth-utils");
-const jwtKey = "my_secret_key";
+const bcrypt = require('bcryptjs');
+const authService = require('../services/auth-service');
+const authUtil = require('../utils/auth-utils');
+const jwtKey = 'my_secret_key';
 const jwtExpirySeconds = 300;
-const jwtalgorithm = "HS256";
+const jwtalgorithm = 'HS256';
 
 // POST /auth/register
 exports.register = function (req, res) {
@@ -12,27 +12,23 @@ exports.register = function (req, res) {
 
   // Validate user input
   if (!(email && password && first_name && last_name && userName)) {
-    res.status(400).send("All input is required");
+    res.status(400).send('All input is required');
   }
 
   // Create user in our Variable
-  try {
-    const newUser = {
-      first_name: first_name,
-      last_name: last_name,
-      userName: userName,
-      email: email.toLowerCase(), // sanitize: convert email to lowercase
-      password: password,
-    };
-    authService
-      .register(newUser)
-      .then((users) => {
-        res.send(users);
-      })
-      .catch((err) => res.status(404).json({ msg: "No user found" + err }));
-  } catch (error) {
-    throw error;
-  }
+  const newUser = {
+    first_name: first_name,
+    last_name: last_name,
+    userName: userName,
+    email: email.toLowerCase(), // sanitize: convert email to lowercase
+    password: password,
+  };
+  authService
+    .register(newUser)
+    .then((users) => {
+      res.send(users);
+    })
+    .catch((err) => res.status(404).json({ msg: 'No user found' + err }));
 };
 
 exports.login = function (req, res) {
@@ -41,46 +37,42 @@ exports.login = function (req, res) {
 
   // Validate user input
   if (!(userName && password)) {
-    res.status(400).send("All input is required");
+    res.status(400).send('All input is required');
   }
 
-  try {
-    authService
-      .login(userName, password)
-      .then((users) => {
-        if (users.userName == userName && users.password == password) {
-          // Create a new token with the username in the payload
-          // and which expires 300 seconds (jwtExpirySeconds Variable) after issue
-          const token = authUtil.createToken(
-            userName,
-            jwtKey,
-            jwtalgorithm,
-            jwtExpirySeconds
-          );
+  authService
+    .login(userName, password)
+    .then((users) => {
+      if (users.userName == userName && users.password == password) {
+        // Create a new token with the username in the payload
+        // and which expires 300 seconds (jwtExpirySeconds Variable) after issue
+        const token = authUtil.createToken(
+          userName,
+          jwtKey,
+          jwtalgorithm,
+          jwtExpirySeconds
+        );
 
-          console.log("token:", token);
+        console.log('token:', token);
 
-          // set the cookie as the token string, with a similar max age as the token
-          // here, the max age is in milliseconds, so we multiply by 1000
-          res.cookie("token", token, { maxAge: jwtExpirySeconds * 1000 });
-          res.send(users);
-          res.end();
-        } else {
-          // return 401 error is username or password doesn't exist, or if password does
-          // not match the password in our records
-          return res.status(401).end();
-        }
-      })
-      .catch((err) => res.status(404).json({ msg: "No user found" }));
-  } catch (error) {
-    throw error;
-  }
+        // set the cookie as the token string, with a similar max age as the token
+        // here, the max age is in milliseconds, so we multiply by 1000
+        res.cookie('token', token, { maxAge: jwtExpirySeconds * 1000 });
+        res.send(users);
+        res.end();
+      } else {
+        // return 401 error is username or password doesn't exist, or if password does
+        // not match the password in our records
+        return res.status(401).end();
+      }
+    })
+    .catch(() => res.status(404).json({ msg: 'No user found' }));
 };
 
 exports.welcome = function (req, res) {
   // We can obtain the session token from the requests cookies, which come with every request
   const token = req.cookies.token;
-  console.log("Request token:", token);
+  console.log('Request token:', token);
 
   // if the cookie is not set, return an unauthorized error
   if (!token) {
@@ -143,6 +135,6 @@ exports.refresh = function (req, res) {
   );
 
   // Set the new token as the users `token` cookie
-  res.cookie("token", createToken, { maxAge: jwtExpirySeconds * 1000 });
+  res.cookie('token', createToken, { maxAge: jwtExpirySeconds * 1000 });
   res.end();
 };
