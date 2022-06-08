@@ -1,12 +1,9 @@
 const express = require("express");
 const app = express();
 app.use(express.json());
-
 const handlers = require("./handlers");
-const { DB_URI } = require("./config");
-const mongoose = require("mongoose");
-mongoose.connect(DB_URI);
-
+const db = require('./database')
+db.connect();
 app.get("/", function (req, res) {
   return res.send("Hello World...Users");
 });
