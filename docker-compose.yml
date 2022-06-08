@@ -11,6 +11,8 @@ services:
       - db
     environment:
       - MONGO_DB_URI=mongodb://db/market-place
+    env_file:
+      - ./config/env/.env.users_config
   products:
     build: "./products"
     ports:
@@ -19,6 +21,8 @@ services:
       - db
     environment:
       - MONGO_DB_URI=mongodb://db/market-place
+    env_file:
+      - ./config/env/.env.products_config
   auth:
     build: "./auth"
     ports:
@@ -27,6 +31,8 @@ services:
       - db
     environment:
       - MONGO_DB_URI=mongodb://db/market-place
+    env_file:
+      - ./config/env/.env.auth_config
   db:
     image: mongo
     ports:
