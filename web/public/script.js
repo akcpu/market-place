@@ -36,7 +36,7 @@ userBtn.addEventListener("click", (event) => {
 
 productBtn.addEventListener("click", (event) => {
   event.preventDefault();
-  create("http://localhost:8080/api/products", "product-name");
+  //create('http://localhost:8080/api/products', 'product-name');
 });
 
 searchBtn.addEventListener("click", (event) => {
