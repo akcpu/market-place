@@ -1,4 +1,4 @@
-const User = require('../models/user');
+const User = require("../models/user");
 
 exports.checkExist = function (reqUserName) {
   let userCheck = User.findOne({ userName: reqUserName });

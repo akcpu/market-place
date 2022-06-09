@@ -12,6 +12,7 @@
     "eslint": "^8.17.0"
   },
   "scripts": {
-    "lintfix": "eslint . --fix --cache"
+    "lint": "eslint . --ext .js",
+    "lintfix": "eslint --ext .js --fix. && echo 'Lintfix complete.'"
   }
 }

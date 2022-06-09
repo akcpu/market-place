@@ -1,11 +1,11 @@
-const productService = require('../services/product-service');
+const productService = require("../services/product-service");
 
 // GET /api/products
 exports.getproducts = function (req, res) {
   productService
     .getproducts()
     .then((products) => res.send(products))
-    .catch((err) => res.status(404).json({ msg: 'No products found' + err }));
+    .catch((err) => res.status(404).json({ msg: "No products found" + err }));
 };
 
 // GET /api/products/:id
@@ -16,7 +16,7 @@ exports.getProductById = function (req, res) {
       res.send(products);
     })
     .catch((err) => {
-      res.status(404).json({ msg: 'No product found' + err });
+      res.status(404).json({ msg: "No product found" + err });
     });
 };
 
@@ -30,8 +30,8 @@ exports.setProduct = function (req, res) {
       desc: req.body.desc,
     };
     let setProductResult = productService.setProduct(newProduct);
-    res.send('User has been added successfully' + setProductResult);
+    res.send("User has been added successfully" + setProductResult);
   } catch (error) {
-    return res.send('error: ' + error);
+    return res.send("error: " + error);
   }
 };
