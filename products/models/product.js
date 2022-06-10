@@ -3,9 +3,9 @@ const Schema = mongoose.Schema;
 
 const ProductSchema = new Schema({
   id: {
-    type: Number,
+    type: String,
     required: true,
-    default: 0.0,
+    default: "1",
   },
   name: {
     type: String,

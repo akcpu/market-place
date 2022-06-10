@@ -9,30 +9,24 @@ services:
       - "3003:3000"
     depends_on:
       - db
-    environment:
-      - MONGO_DB_URI=mongodb://db/market-place
     env_file:
-      - ./config/env/.env.users_config
+      - "config/env/.env.users_config"
   products:
     build: "./products"
     ports:
       - "3001:3000"
     depends_on:
       - db
-    environment:
-      - MONGO_DB_URI=mongodb://db/market-place
     env_file:
-      - ./config/env/.env.products_config
+      - "config/env/.env.users_config"
   auth:
     build: "./auth"
     ports:
       - "3002:3000"
     depends_on:
       - db
-    environment:
-      - MONGO_DB_URI=mongodb://db/market-place
     env_file:
-      - ./config/env/.env.auth_config
+      - "config/env/.env.users_config"
   db:
     image: mongo
     ports:

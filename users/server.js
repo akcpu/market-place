@@ -1,8 +1,7 @@
 const express = require("express");
 const app = express();
 app.use(express.json());
-const handlers = require("./handlers");
-const db = require('./database')
+const db = require("./database");
 db.connect();
 app.get("/", function (req, res) {
   return res.send("Hello World...Users");

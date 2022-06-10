@@ -1,8 +1,7 @@
 const express = require("express");
 const app = express();
 app.use(express.json());
-const handlers = require("./handlers");
-const db = require('./database')
+const db = require("./database");
 db.connect();
 var bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");

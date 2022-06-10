@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "price": { "type": "string" },
+    "desc": { "type": "string" }
+  },
+  "required": ["id", "name", "price"],
+  "additionalProperties": false
+}

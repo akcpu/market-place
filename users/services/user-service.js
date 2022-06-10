@@ -1,5 +1,4 @@
 const User = require("../models/user");
-
 exports.getUserById = function (userId) {
   return User.findOne({ id: userId });
 };

@@ -1,3 +1,6 @@
+const { ajv } = require("../validation");
+const validate_register = ajv.getSchema("register");
+const validate_login = ajv.getSchema("login");
 const jwt = require("jsonwebtoken");
 const authService = require("../services/auth-service");
 const authUtil = require("../utils/auth-utils");
@@ -7,66 +10,70 @@ const jwtalgorithm = "HS256";
 
 // POST /auth/register
 exports.register = function (req, res) {
-  // Get user input
-  const { first_name, last_name, userName, email, password } = req.body;
+  if (validate_register(req.body)) {
+    // Get user input
+    const { first_name, last_name, userName, email, password } = req.body;
 
-  // Validate user input
-  if (!(email && password && first_name && last_name && userName)) {
-    res.status(400).send("All input is required");
+    // Create user in our Variable
+    const newUser = {
+      first_name: first_name,
+      last_name: last_name,
+      userName: userName,
+      email: email.toLowerCase(), // sanitize: convert email to lowercase
+      password: password,
+    };
+    authService
+      .register(newUser)
+      .then((users) => {
+        res.send(users);
+      })
+      .catch((err) => res.status(404).json({ msg: "No user found" + err }));
+  } else {
+    console.log(validate_register.errors);
+    res.status(404).json({
+      msg: "No user found" + JSON.stringify(validate_register.errors),
+    });
   }
-
-  // Create user in our Variable
-  const newUser = {
-    first_name: first_name,
-    last_name: last_name,
-    userName: userName,
-    email: email.toLowerCase(), // sanitize: convert email to lowercase
-    password: password,
-  };
-  authService
-    .register(newUser)
-    .then((users) => {
-      res.send(users);
-    })
-    .catch((err) => res.status(404).json({ msg: "No user found" + err }));
 };
 
 exports.login = function (req, res) {
-  // Get user input for credentials from JSON body
-  const { userName, password } = req.body;
+  if (validate_login(req.body)) {
+    // Get user input for credentials from JSON body
+    const { userName, password } = req.body;
 
-  // Validate user input
-  if (!(userName && password)) {
-    res.status(400).send("All input is required");
+    authService
+      .login(userName, password)
+      .then((users) => {
+        if (users.userName == userName && users.password == password) {
+          // Create a new token with the username in the payload
+          // and which expires 300 seconds (jwtExpirySeconds Variable) after issue
+          const token = authUtil.createToken(
+            userName,
+            jwtKey,
+            jwtalgorithm,
+            jwtExpirySeconds
+          );
+
+          console.log("token:", token);
+
+          // set the cookie as the token string, with a similar max age as the token
+          // here, the max age is in milliseconds, so we multiply by 1000
+          res.cookie("token", token, { maxAge: jwtExpirySeconds * 1000 });
+          res.send(users);
+          res.end();
+        } else {
+          // return 401 error is username or password doesn't exist, or if password does
+          // not match the password in our records
+          return res.status(401).end();
+        }
+      })
+      .catch(() => res.status(404).json({ msg: "No user found" }));
+  } else {
+    console.log(validate_login.errors);
+    res.status(404).json({
+      msg: "No user found" + JSON.stringify(validate_login.errors),
+    });
   }
-
-  authService
-    .login(userName, password)
-    .then((users) => {
-      if (users.userName == userName && users.password == password) {
-        // Create a new token with the username in the payload
-        // and which expires 300 seconds (jwtExpirySeconds Variable) after issue
-        const token = authUtil.createToken(
-          userName,
-          jwtKey,
-          jwtalgorithm,
-          jwtExpirySeconds
-        );
-
-        console.log("token:", token);
-
-        // set the cookie as the token string, with a similar max age as the token
-        // here, the max age is in milliseconds, so we multiply by 1000
-        res.cookie("token", token, { maxAge: jwtExpirySeconds * 1000 });
-        res.send(users);
-        res.end();
-      } else {
-        // return 401 error is username or password doesn't exist, or if password does
-        // not match the password in our records
-        return res.status(401).end();
-      }
-    })
-    .catch(() => res.status(404).json({ msg: "No user found" }));
 };
 
 exports.welcome = function (req, res) {
