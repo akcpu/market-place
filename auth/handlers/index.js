@@ -14,11 +14,6 @@ exports.register = function (req, res) {
     // Get user input
     const { first_name, last_name, userName, email, password } = req.body;
 
-    // Validate user input
-    if (!(email && password && first_name && last_name && userName)) {
-      res.status(400).send("All input is required");
-    }
-
     // Create user in our Variable
     const newUser = {
       first_name: first_name,
@@ -45,11 +40,6 @@ exports.login = function (req, res) {
   if (validate_login(req.body)) {
     // Get user input for credentials from JSON body
     const { userName, password } = req.body;
-
-    // Validate user input
-    if (!(userName && password)) {
-      res.status(400).send("All input is required");
-    }
 
     authService
       .login(userName, password)
