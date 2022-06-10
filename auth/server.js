@@ -1,9 +1,8 @@
 const express = require("express");
 const app = express();
 app.use(express.json());
-const handlers = require("./handlers");
-const db = require('./database')
-db.connect();
+const authDB = require("./database");
+authDB.connect();
 var bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 app.use(bodyParser.urlencoded({ extended: false }));
