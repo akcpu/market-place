@@ -5,7 +5,8 @@
     "author": "Arman Kiani <armankianipm@gmail.com>",
     "main": "server.js",
     "scripts": {
-        "start": "node server.js"
+        "start": "node server.js",
+        "test": "echo \"Error: no test specified\""
     },
     "dependencies": {
         "ajv": "^8.11.0",
