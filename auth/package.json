@@ -1,21 +1,24 @@
 {
-    "name": "market-place",
-    "version": "1.0.0",
-    "description": "Node.js market place on Docker",
-    "author": "Arman Kiani <armankianipm@gmail.com>",
-    "main": "server.js",
-    "scripts": {
-        "start": "node server.js",
-        "test": "echo \"Error: no test specified\""
-    },
-    "dependencies": {
-        "ajv": "^8.11.0",
-        "bcryptjs": "^2.4.3",
-        "cookie-parser": "^1.4.6",
-        "dotenv": "^16.0.1",
-        "express": "^4.16.1",
-        "jsonwebtoken": "^8.5.1",
-        "mongodb": "^4.6.0",
-        "mongoose": "^6.3.4"
-    }
+  "name": "market-place",
+  "version": "1.0.0",
+  "description": "Node.js market place on Docker",
+  "author": "Arman Kiani <armankianipm@gmail.com>",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\""
+  },
+  "dependencies": {
+    "ajv": "^8.11.0",
+    "axios": "^0.27.2",
+    "bcryptjs": "^2.4.3",
+    "consolidate": "^0.16.0",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.0.1",
+    "express": "^4.16.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongodb": "^4.6.0",
+    "mongoose": "^6.3.4",
+    "mustache": "^4.2.0"
+  }
 }

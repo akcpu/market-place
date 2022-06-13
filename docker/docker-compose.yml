@@ -21,7 +21,7 @@ services:
       - products
       - auth
 
-# Microservices
+  # Microservices
   users:
     build:
       context: ../
@@ -35,7 +35,7 @@ services:
     env_file:
       - "../config/env/.env.users_config"
   products:
-    build: 
+    build:
       context: ../
       dockerfile: docker/Dockerfile
       args:
@@ -47,7 +47,7 @@ services:
     env_file:
       - "../config/env/.env.users_config"
   auth:
-    build: 
+    build:
       context: ../
       dockerfile: docker/Dockerfile
       args:
