@@ -8,6 +8,58 @@ const jwtKey = "my_secret_key";
 const jwtExpirySeconds = 300;
 const jwtalgorithm = "HS256";
 
+const { appConfig } = require("../config");
+
+////////////////
+
+// Import the axios library, to make HTTP requests
+const axios = require("axios");
+// This is the client ID and client secret that you obtained
+// while registering on github app
+const clientID = appConfig.clientID;
+const clientSecret = appConfig.clientSecret;
+var access_token = "";
+
+// Declare the callback route
+exports.gitCallback = (req, res) => {
+  // The req.query object has the query params that were sent to this route.
+  const requestToken = req.query.code;
+
+  axios({
+    method: "post",
+    url: `https://github.com/login/oauth/access_token?client_id=${clientID}&client_secret=${clientSecret}&code=${requestToken}`,
+    // Set the content type header, so that we get the response in JSON
+    headers: {
+      accept: "application/json",
+    },
+  }).then((response) => {
+    access_token = response.data.access_token;
+    res.redirect("/auth/success");
+  });
+};
+
+exports.gitSuccess = (req, res) => {
+  axios({
+    method: "get",
+    url: "https://api.github.com/user",
+    headers: {
+      Authorization: "token " + access_token,
+    },
+  }).then((response) => {
+    var viewdata = { userData: response.data };
+    res.render("success", viewdata);
+  });
+};
+require("dotenv").config();
+exports.github = (req, res) => {
+  var viewdata = { client_id: clientID };
+  res.render("index", viewdata);
+};
+
+exports.auth = (req, res) => {
+  return res.send("Hello World...Auth");
+};
+
 // POST /auth/register
 exports.register = function (req, res) {
   if (validate_register(req.body)) {
@@ -145,3 +197,11 @@ exports.refresh = function (req, res) {
   res.cookie("token", createToken, { maxAge: jwtExpirySeconds * 1000 });
   res.end();
 };
+
+// exports.github_OAth2 = function (req, res) {
+//   res.render("index", {
+//     locals: {
+//       title: "Welcome",
+//     },
+//   });
+// };
