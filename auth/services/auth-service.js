@@ -1,22 +1,62 @@
 const User = require("../models/user");
+const Token = require("../models/UserToken");
 
-exports.checkExist = function (reqUserName) {
-  let userCheck = User.findOne({ userName: reqUserName });
+exports.checkExist = function (reqemail) {
+  let userCheck = User.findOne({ email: reqemail });
   console.log(userCheck);
   return userCheck;
 };
 
 exports.register = function (ruser) {
   const registerUser = new User({
-    first_name: ruser.first_name,
-    last_name: ruser.last_name,
-    userName: ruser.userName,
+    full_name: ruser.full_name,
     email: ruser.email,
     password: ruser.password,
   });
   return registerUser.save();
 };
 
-exports.login = function (reqUserName, reqPassword) {
-  return User.findOne({ userName: reqUserName, password: reqPassword });
+exports.login = function (reqemail, reqPassword) {
+  return User.findOne({ email: reqemail, password: reqPassword });
+};
+
+exports.findEmail = function (reqEmail) {
+  return User.findOne({ email: reqEmail });
+};
+exports.findUserById = function (user_id) {
+  return User.findOne({ _id: user_id });
+};
+exports.findToken = function (user_id) {
+  return Token.findOne({ userId: user_id });
+};
+exports.findTokenByuserIdToken = function (user_id, reqToken) {
+  return Token.findOne({
+    userId: user_id,
+    token: reqToken,
+  });
+};
+exports.createToken = function (reqEmail, user_id) {
+  const user = User.findOne({ email: reqEmail });
+  let token = Token.findOne({ userId: user_id });
+  token = new Token({
+    userId: user._id,
+    token: crypto.randomBytes(32).toString("hex"),
+  }).save();
+
+  return token;
+};
+exports.vrifyToken = function (user_id, crypto) {
+  const token = new Token({
+    userId: user_id,
+    token: crypto,
+  }).save();
+  return token;
+};
+
+exports.verifyUser = function (user_id, bool) {
+  User.updateOne({ _id: user_id, verified: bool });
+};
+
+exports.tokenRemove = function (token_id) {
+  Token.findByIdAndRemove(token_id);
 };

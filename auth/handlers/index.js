@@ -1,26 +1,368 @@
-const { ajv } = require("../validation");
-const validate_register = ajv.getSchema("register");
-const validate_login = ajv.getSchema("login");
-const jwt = require("jsonwebtoken");
-const authService = require("../services/auth-service");
-const authUtil = require("../utils/auth-utils");
-const jwtKey = "my_secret_key";
-const jwtExpirySeconds = 300;
-const jwtalgorithm = "HS256";
-
 const { appConfig } = require("../config");
-
-////////////////
-
-// Import the axios library, to make HTTP requests
 const axios = require("axios");
-// This is the client ID and client secret that you obtained
-// while registering on github app
 const clientID = appConfig.clientID;
 const clientSecret = appConfig.clientSecret;
 var access_token = "";
+require("dotenv").config();
+const bcrypt = require("bcrypt");
+//Auth const
+const {
+  signUpBodyValidation,
+  logInBodyValidation,
+} = require("../utils/validationSchema");
+// const User = require("../models/User");
+const generateTokens = require("../utils/generateTokens");
+//Token const
+const UserToken = require("../models/UserToken");
+const jwt = require("jsonwebtoken");
+const { User, validate } = require("../models/user");
+const { sendEmail } = require("../utils/sendEmail");
+const crypto = require("crypto");
+const Joi = require("joi");
+// const nodemailer = require("nodemailer");
 
-// Declare the callback route
+// signup
+exports.signUp = async (req, res) => {
+  try {
+    const { error } = signUpBodyValidation(req.body);
+    if (error)
+      return res
+        .status(400)
+        .json({ error: true, message: error.details[0].message });
+
+    const user = await User.findOne({ email: req.body.email });
+    if (user)
+      return res
+        .status(400)
+        .json({ error: true, message: "User with given email already exist" });
+
+    const salt = await bcrypt.genSalt(Number(appConfig.SALT));
+    const hashPassword = await bcrypt.hash(req.body.password, salt);
+
+    await new User({ ...req.body, password: hashPassword }).save();
+
+    res.status(201).json({
+      error: false,
+      message:
+        "Account created sucessfully" +
+        "salt: " +
+        salt +
+        "hashPassword: " +
+        hashPassword,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: true, message: "Internal Server Error" });
+  }
+};
+// create user and send email
+exports.createUserandSendEmail = async (req, res) => {
+  try {
+    const { error } = validate(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    let user = await User.findOne({ email: req.body.email });
+    if (user)
+      return res.status(400).send("User with given email already exist!");
+
+    const salt = await bcrypt.genSalt(Number(appConfig.SALT));
+    const hashPassword = await bcrypt.hash(req.body.password, salt);
+
+    user = await new User({
+      full_name: req.body.full_name,
+      email: req.body.email,
+      password: hashPassword,
+    }).save();
+
+    let token = await new UserToken({
+      userId: user._id,
+      token: crypto.randomBytes(32).toString("hex"),
+    }).save();
+
+    const link = `${appConfig.serviceURL}/user/verify/${user.id}/${token.token}`;
+    //res.render(__dirname + "/views/layouts/main.html", { name: name });
+    await sendEmail(user.email, "Verify Email", "email_code_verify-css", link);
+    res.send("An Email sent to your account please verify");
+  } catch (error) {
+    res.status(400).send("error: " + error + "An error occured");
+  }
+};
+
+// verify link sent by email
+exports.verifyEmailLink = async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.params.id });
+    if (!user) return res.status(400).send("Invalid link");
+
+    const token = await UserToken.findOne({
+      userId: user._id,
+      token: req.params.token,
+    });
+    if (!token) return res.status(400).send("Invalid link");
+
+    User.updateOne({ _id: user._id }, { verified: true })
+      .then((obj) => {
+        console.log("updateOne Updated - " + obj);
+        // res.redirect("orders");
+      })
+      .catch((err) => {
+        console.log("updateOne Error: " + err);
+      });
+
+    await UserToken.findByIdAndRemove(token._id)
+      .then((obj) => {
+        console.log("findByIdAndRemove - " + obj);
+        // res.redirect("orders");
+      })
+      .catch((err) => {
+        console.log("findByIdAndRemove Error: " + err);
+      });
+
+    res.send("email verified sucessfully");
+  } catch (error) {
+    res.status(400).send("An error occured");
+  }
+};
+
+// login
+exports.logIn = async (req, res) => {
+  try {
+    const { error } = logInBodyValidation(req.body);
+    if (error)
+      return res
+        .status(400)
+        .json({ error: true, message: error.details[0].message });
+
+    const user = await User.findOne({ email: req.body.email });
+    if (!user)
+      return res
+        .status(401)
+        .json({ error: true, message: "Invalid email or password" });
+
+    const verifiedUser = await User.findOne(
+      { email: req.body.email },
+      { verified: true }
+    );
+    if (!verifiedUser)
+      return res.status(401).json({ error: true, message: "Unverified email" });
+
+    const salt = await bcrypt.genSalt(Number(appConfig.SALT));
+    const hashPassword = await bcrypt.hash(req.body.password, salt);
+    const verifiedPassword = await bcrypt.compare(
+      req.body.password,
+      user.password
+    );
+    if (!verifiedPassword)
+      return res.status(401).json({
+        error: true,
+        message:
+          "Invalid email or password!!" +
+          "req.body.password: " +
+          req.body.password +
+          "hashPassword: " +
+          hashPassword +
+          "user.password: " +
+          user.password,
+      });
+
+    res.cookie("token", await generateTokens.accessToken(user));
+    const refreshToken = await generateTokens.refreshToken(user);
+
+    // const tokenauthorization = req.headers.authorization.split(" ");
+    res.status(200).json({
+      error: false,
+      refreshToken,
+      message: "Logged in sucessfully",
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: true, message: "Internal Server Error" });
+  }
+};
+
+exports.profile = async (req, res) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).end();
+  }
+  const decode = await jwt.verify(token, appConfig.accessTPK);
+  const findUser = await User.findById(decode._id);
+  if (!findUser) {
+    return res.status(401).end();
+  }
+  const { _id, full_name, email, password, verified, roles } = findUser;
+  res.status(200).json({
+    error: false,
+    message:
+      "username: " +
+      "_id: " +
+      _id +
+      "full_name: " +
+      full_name +
+      "email: " +
+      email +
+      "password: " +
+      password +
+      "verified: " +
+      verified +
+      roles +
+      "Access successfully",
+  });
+};
+
+exports.logOut = async (req, res) => {
+  res.clearCookie("token").end;
+  res.status(200).json({
+    error: false,
+    message: "User LogOut successfully",
+  });
+};
+
+// Get Change password Page
+exports.getResetUserPassword = async (req, res) => {
+  var viewdata = {
+    AppName: "AppName",
+    LoginLink: "login",
+    OrgName: "OrgName",
+    Title: "Title",
+    OrgAvatar: "OrgAvatar",
+    ActionForm: "reset-password",
+  };
+  res.render("reset_password", viewdata);
+};
+
+// Change User password
+exports.resetUserPassword = async (req, res) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).end();
+  }
+  const decode = await jwt.verify(token, appConfig.accessTPK);
+  const findUser = await User.findById(decode._id);
+  if (!findUser) {
+    return res.status(401).end();
+  }
+  const { _id, full_name, email, password, verified, roles } = findUser;
+  res.status(200).json({
+    error: false,
+    message:
+      "username: " +
+      "_id: " +
+      _id +
+      "full_name: " +
+      full_name +
+      "email: " +
+      email +
+      "password: " +
+      password +
+      "verified: " +
+      verified +
+      roles +
+      "Access successfully",
+  });
+
+  try {
+    const salt = await bcrypt.genSalt(Number(appConfig.SALT));
+    const hashPassword = await bcrypt.hash(req.body.password, salt);
+    findUser.password = hashPassword;
+    await findUser.save();
+    await token.delete();
+
+    res.send("change password sucessfully.");
+  } catch (error) {
+    res.send("An error occured");
+    console.log(error);
+  }
+};
+
+// Forget password Page
+exports.getForgetPasswordPage = async (req, res) => {
+  var viewdata = {
+    AppName: "AppName",
+    LoginLink: "login",
+    OrgName: "OrgName",
+    Title: "Title",
+    OrgAvatar: "OrgAvatar",
+    ActionForm: "/auth/password-reset/",
+  };
+  res.render("forget_password", viewdata);
+};
+
+// Send reset password link
+exports.forgetPassword = async (req, res) => {
+  try {
+    const schema = Joi.object({ email: Joi.string().email().required() });
+    const { error } = schema.validate(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    const user = await User.findOne({ email: req.body.email });
+    if (!user)
+      return res.status(400).send("user with given email doesn't exist");
+
+    let token = await UserToken.findOne({ userId: user._id });
+    if (!token) {
+      token = await new UserToken({
+        userId: user._id,
+        token: crypto.randomBytes(32).toString("hex"),
+      }).save();
+    }
+
+    const link = `${appConfig.serviceURL}/password-reset/${user._id}/${token.token}`;
+    await sendEmail(user.email, "Password reset", link);
+    res.send("password reset link sent to your email account");
+  } catch (error) {
+    res.send("An error occured");
+    console.log(error);
+  }
+};
+
+// Forget password
+exports.getForgetPassword = async (req, res) => {
+  let requserId = req.params.userId;
+  let reqToken = req.params.token;
+  try {
+    const user = await User.findOne({ _id: requserId });
+    if (!user) return res.status(400).send("Invalid link");
+
+    const token = await UserToken.findOne({
+      userId: user._id,
+      token: reqToken,
+    });
+    if (!token) return res.status(400).send("Invalid link");
+
+    await UserToken.findByIdAndRemove(token._id)
+      .then((obj) => {
+        console.log("findByIdAndRemove - " + obj);
+      })
+      .catch((err) => {
+        console.log("findByIdAndRemove Error: " + err);
+      });
+    res.cookie("token", await generateTokens.accessToken(user));
+
+    var viewdata = {
+      AppName: "AppName",
+      LoginLink: "login",
+      OrgName: "OrgName",
+      Title: "Title",
+      OrgAvatar: "OrgAvatar",
+      ActionForm: "/auth/password-reset/",
+    };
+    res.render("reset_password", viewdata);
+
+    res.send("Passwrd Changed sucessfully" + token).end;
+  } catch (error) {
+    res.status(400).send("An error occured");
+    console.log(error);
+  }
+};
+
+// show Github login page
+exports.github = (req, res) => {
+  var viewdata = { client_id: clientID };
+  res.render("index", viewdata);
+};
+
+// Declare the callback github route
 exports.gitCallback = (req, res) => {
   // The req.query object has the query params that were sent to this route.
   const requestToken = req.query.code;
@@ -38,6 +380,7 @@ exports.gitCallback = (req, res) => {
   });
 };
 
+// Github Authorization Successfully
 exports.gitSuccess = (req, res) => {
   axios({
     method: "get",
@@ -50,158 +393,16 @@ exports.gitSuccess = (req, res) => {
     res.render("success", viewdata);
   });
 };
-require("dotenv").config();
-exports.github = (req, res) => {
-  var viewdata = { client_id: clientID };
-  res.render("index", viewdata);
+
+// Show all Users
+exports.getUsers = async (_req, res) => {
+  await User.find()
+    .then((users) => res.send(users))
+    .catch(() => res.status(404).json({ msg: "No user found" }));
 };
-
-exports.auth = (req, res) => {
-  return res.send("Hello World...Auth");
+// Show all Tokens
+exports.getTokens = async (_req, res) => {
+  await UserToken.find()
+    .then((tokens) => res.send(tokens))
+    .catch(() => res.status(404).json({ msg: "No token found" }));
 };
-
-// POST /auth/register
-exports.register = function (req, res) {
-  if (validate_register(req.body)) {
-    // Get user input
-    const { first_name, last_name, userName, email, password } = req.body;
-
-    // Create user in our Variable
-    const newUser = {
-      first_name: first_name,
-      last_name: last_name,
-      userName: userName,
-      email: email.toLowerCase(), // sanitize: convert email to lowercase
-      password: password,
-    };
-    authService
-      .register(newUser)
-      .then((users) => {
-        res.send(users);
-      })
-      .catch((err) => res.status(404).json({ msg: "No user found" + err }));
-  } else {
-    console.log(validate_register.errors);
-    res.status(404).json({
-      msg: "No user found" + JSON.stringify(validate_register.errors),
-    });
-  }
-};
-
-exports.login = function (req, res) {
-  if (validate_login(req.body)) {
-    // Get user input for credentials from JSON body
-    const { userName, password } = req.body;
-
-    authService
-      .login(userName, password)
-      .then((users) => {
-        if (users.userName == userName && users.password == password) {
-          // Create a new token with the username in the payload
-          // and which expires 300 seconds (jwtExpirySeconds Variable) after issue
-          const token = authUtil.createToken(
-            userName,
-            jwtKey,
-            jwtalgorithm,
-            jwtExpirySeconds
-          );
-
-          console.log("token:", token);
-
-          // set the cookie as the token string, with a similar max age as the token
-          // here, the max age is in milliseconds, so we multiply by 1000
-          res.cookie("token", token, { maxAge: jwtExpirySeconds * 1000 });
-          res.send(users);
-          res.end();
-        } else {
-          // return 401 error is username or password doesn't exist, or if password does
-          // not match the password in our records
-          return res.status(401).end();
-        }
-      })
-      .catch(() => res.status(404).json({ msg: "No user found" }));
-  } else {
-    console.log(validate_login.errors);
-    res.status(404).json({
-      msg: "No user found" + JSON.stringify(validate_login.errors),
-    });
-  }
-};
-
-exports.welcome = function (req, res) {
-  // We can obtain the session token from the requests cookies, which come with every request
-  const token = req.cookies.token;
-  console.log("Request token:", token);
-
-  // if the cookie is not set, return an unauthorized error
-  if (!token) {
-    return res.status(401).end();
-  }
-
-  var payload;
-  try {
-    // Parse the JWT string and store the result in `payload`.
-    // Note that we are passing the key in this method as well. This method will throw an error
-    // if the token is invalid (if it has expired according to the expiry time we set on sign in),
-    // or if the signature does not match
-    payload = authUtil.verifyToken(token, jwtKey);
-  } catch (e) {
-    if (e instanceof jwt.JsonWebTokenError) {
-      // if the error thrown is because the JWT is unauthorized, return a 401 error
-      return res.status(401).end();
-    }
-    // otherwise, return a bad request error
-    return res.status(400).end();
-  }
-
-  // Finally, return the welcome message to the user, along with their
-  // username given in the token
-  res.send(`Welcome ${Object.values(payload)[0]}!`);
-};
-
-exports.refresh = function (req, res) {
-  // (BEGIN) The code uptil this point is the same as the first part of the `welcome` route
-  const token = req.cookies.token;
-
-  if (!token) {
-    return res.status(401).end();
-  }
-
-  var payload;
-  try {
-    payload = authUtil.verifyToken(token, jwtKey);
-  } catch (e) {
-    if (e instanceof jwt.JsonWebTokenError) {
-      return res.status(401).end();
-    }
-    return res.status(400).end();
-  }
-  // (END) The code uptil this point is the same as the first part of the `welcome` route
-
-  // We ensure that a new token is not issued until enough time has elapsed
-  // In this case, a new token will only be issued if the old token is within
-  // 30 seconds of expiry. Otherwise, return a bad request status
-  const nowUnixSeconds = authUtil.nowUnixSeconds;
-  if (Object.values(payload)[2] - nowUnixSeconds > 30) {
-    return res.status(400).end();
-  }
-
-  const createToken = authUtil.createToken(
-    Object.values(payload)[0],
-    jwtKey,
-    jwtalgorithm,
-    jwtExpirySeconds
-  );
-
-  // Set the new token as the users `token` cookie
-  res.cookie("token", createToken, { maxAge: jwtExpirySeconds * 1000 });
-  res.end();
-};
-
-// exports.github_OAth2 = function (req, res) {
-//   res.render("index", {
-//     locals: {
-//       title: "Welcome",
-//     },
-//   });
-// };
