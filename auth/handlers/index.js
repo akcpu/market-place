@@ -10,11 +10,11 @@ const {
   signUpBodyValidation,
   logInBodyValidation,
 } = require("../utils/validationSchema");
-// const User = require("../models/User");
 const generateTokens = require("../utils/generateTokens");
 //Token const
 const UserToken = require("../models/UserToken");
 const jwt = require("jsonwebtoken");
+// const User = require("../models/User");
 const { User, validate } = require("../models/user");
 const { sendEmail } = require("../utils/sendEmail");
 const crypto = require("crypto");
@@ -55,6 +55,20 @@ exports.signUp = async (req, res) => {
     res.status(500).json({ error: true, message: "Internal Server Error" });
   }
 };
+
+// Get SignUp Page
+exports.showSignUp = async (req, res) => {
+  var viewdata = {
+    AppName: appConfig.AppName,
+    LoginLink: "/auth/login",
+    OrgName: appConfig.OrgName,
+    Title: "Create User",
+    OrgAvatar: appConfig.OrgAvatar,
+    ActionForm: "/auth/signup",
+  };
+  res.render("signup", viewdata);
+};
+
 // create user and send email
 exports.createUserandSendEmail = async (req, res) => {
   try {
@@ -66,7 +80,7 @@ exports.createUserandSendEmail = async (req, res) => {
       return res.status(400).send("User with given email already exist!");
 
     const salt = await bcrypt.genSalt(Number(appConfig.SALT));
-    const hashPassword = await bcrypt.hash(req.body.password, salt);
+    const hashPassword = await bcrypt.hash(req.body.newPassword, salt);
 
     user = await new User({
       full_name: req.body.full_name,
@@ -78,11 +92,21 @@ exports.createUserandSendEmail = async (req, res) => {
       userId: user._id,
       token: crypto.randomBytes(32).toString("hex"),
     }).save();
-
     const link = `${appConfig.serviceURL}/user/verify/${user.id}/${token.token}`;
-    //res.render(__dirname + "/views/layouts/main.html", { name: name });
-    await sendEmail(user.email, "Verify Email", "email_code_verify-css", link);
-    res.send("An Email sent to your account please verify");
+
+    await sendEmail(
+      user.full_name,
+      user.email,
+      "Verify Email, " + user.full_name,
+      link,
+      "email_code_verify-css",
+      link
+    );
+
+    var viewdata = {
+      Message: "An Email sent to your account please verify.",
+    };
+    res.render("message", viewdata);
   } catch (error) {
     res.status(400).send("error: " + error + "An error occured");
   }
@@ -118,13 +142,34 @@ exports.verifyEmailLink = async (req, res) => {
         console.log("findByIdAndRemove Error: " + err);
       });
 
-    res.send("email verified sucessfully");
+    var viewdata = {
+      Message: "email verified sucessfully",
+    };
+    res.render("message", viewdata);
   } catch (error) {
     res.status(400).send("An error occured");
   }
 };
 
-// login
+exports.getLogIn = async (req, res) => {
+  let gitClientID = appConfig.clientID
+    ? "https://github.com/login/oauth/authorize?client_id=" + appConfig.clientID
+    : "";
+  var viewdata = {
+    AppName: appConfig.AppName,
+    OrgName: appConfig.OrgName,
+    ActionForm: "/auth/login",
+    Message: "You Can Signin To the Website",
+    ResetPassLink: "/auth/forget_password",
+    SignupLink: "/auth/signup",
+    GithubLink: gitClientID,
+    Title: "signup",
+    OrgAvatar: appConfig.OrgAvatar,
+  };
+  res.render("login", viewdata);
+};
+
+// POST login
 exports.logIn = async (req, res) => {
   try {
     const { error } = logInBodyValidation(req.body);
@@ -133,14 +178,14 @@ exports.logIn = async (req, res) => {
         .status(400)
         .json({ error: true, message: error.details[0].message });
 
-    const user = await User.findOne({ email: req.body.email });
+    const user = await User.findOne({ email: req.body.username });
     if (!user)
       return res
         .status(401)
         .json({ error: true, message: "Invalid email or password" });
 
     const verifiedUser = await User.findOne(
-      { email: req.body.email },
+      { email: req.body.username },
       { verified: true }
     );
     if (!verifiedUser)
@@ -164,10 +209,12 @@ exports.logIn = async (req, res) => {
           "user.password: " +
           user.password,
       });
-
+    // If you request a user login with a user role,
+    // use the refresh Token to log in, and other roles must use accessToken
     res.cookie("token", await generateTokens.accessToken(user));
     const refreshToken = await generateTokens.refreshToken(user);
-
+    res.cookie("refreshToken", refreshToken);
+    // use headers authorization
     // const tokenauthorization = req.headers.authorization.split(" ");
     res.status(200).json({
       error: false,
@@ -211,6 +258,7 @@ exports.profile = async (req, res) => {
 };
 
 exports.logOut = async (req, res) => {
+  res.clearCookie("refreshToken");
   res.clearCookie("token").end;
   res.status(200).json({
     error: false,
@@ -220,13 +268,23 @@ exports.logOut = async (req, res) => {
 
 // Get Change password Page
 exports.getResetUserPassword = async (req, res) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).end();
+  }
+  const decode = await jwt.verify(token, appConfig.accessTPK);
+  const findUser = await User.findById(decode._id);
+  if (!findUser) {
+    return res.status(401).end();
+  }
+
   var viewdata = {
-    AppName: "AppName",
-    LoginLink: "login",
-    OrgName: "OrgName",
-    Title: "Title",
-    OrgAvatar: "OrgAvatar",
-    ActionForm: "reset-password",
+    AppName: appConfig.AppName,
+    ActionForm: "/auth/reset-password/",
+    LoginLink: "/auth/login",
+    OrgName: appConfig.OrgName,
+    Title: "Reset User Password",
+    OrgAvatar: appConfig.OrgAvatar,
   };
   res.render("reset_password", viewdata);
 };
@@ -237,11 +295,14 @@ exports.resetUserPassword = async (req, res) => {
   if (!token) {
     return res.status(401).end();
   }
+  console.log("token: " + token);
+
   const decode = await jwt.verify(token, appConfig.accessTPK);
   const findUser = await User.findById(decode._id);
   if (!findUser) {
     return res.status(401).end();
   }
+  console.log("----------------");
   const { _id, full_name, email, password, verified, roles } = findUser;
   res.status(200).json({
     error: false,
@@ -260,30 +321,35 @@ exports.resetUserPassword = async (req, res) => {
       roles +
       "Access successfully",
   });
-
+  let newPassword = req.body.newPassword;
   try {
     const salt = await bcrypt.genSalt(Number(appConfig.SALT));
-    const hashPassword = await bcrypt.hash(req.body.password, salt);
+    const hashPassword = await bcrypt.hash(newPassword, salt);
     findUser.password = hashPassword;
     await findUser.save();
-    await token.delete();
+    // await token.delete();
+    res.clearCookie("token");
+    res.clearCookie("refreshToken");
 
-    res.send("change password sucessfully.");
+    var viewdata = {
+      Message: "change password sucessfully.",
+    };
+    res.render("message", viewdata);
   } catch (error) {
-    res.send("An error occured");
     console.log(error);
+    res.send("An error occured");
   }
 };
 
 // Forget password Page
 exports.getForgetPasswordPage = async (req, res) => {
   var viewdata = {
-    AppName: "AppName",
-    LoginLink: "login",
-    OrgName: "OrgName",
-    Title: "Title",
-    OrgAvatar: "OrgAvatar",
-    ActionForm: "/auth/password-reset/",
+    AppName: appConfig.AppName,
+    LoginLink: "auth/login",
+    OrgName: appConfig.AppName,
+    Title: "Forget Password",
+    OrgAvatar: appConfig.OrgAvatar,
+    ActionForm: "/auth/forget_password/",
   };
   res.render("forget_password", viewdata);
 };
@@ -307,9 +373,21 @@ exports.forgetPassword = async (req, res) => {
       }).save();
     }
 
-    const link = `${appConfig.serviceURL}/password-reset/${user._id}/${token.token}`;
-    await sendEmail(user.email, "Password reset", link);
-    res.send("password reset link sent to your email account");
+    const link = `${appConfig.serviceURL}/forget_password/${user._id}/${token.token}`;
+
+    await sendEmail(
+      user.full_name,
+      user.email,
+      "Password reset, " + user.full_name,
+      link,
+      "email_link_verify_reset_pass-css",
+      link
+    );
+
+    var viewdata = {
+      Message: "password reset link sent to your email account",
+    };
+    res.render("message", viewdata);
   } catch (error) {
     res.send("An error occured");
     console.log(error);
@@ -340,16 +418,16 @@ exports.getForgetPassword = async (req, res) => {
     res.cookie("token", await generateTokens.accessToken(user));
 
     var viewdata = {
-      AppName: "AppName",
-      LoginLink: "login",
-      OrgName: "OrgName",
-      Title: "Title",
-      OrgAvatar: "OrgAvatar",
-      ActionForm: "/auth/password-reset/",
+      AppName: appConfig.AppName,
+      ActionForm: "/auth/reset-password/",
+      LoginLink: "/auth/login",
+      OrgName: appConfig.OrgName,
+      Title: "Forget Password",
+      OrgAvatar: appConfig.OrgAvatar,
     };
     res.render("reset_password", viewdata);
-
-    res.send("Passwrd Changed sucessfully" + token).end;
+    // res.redirect("/auth/reset-password");
+    // res.send("Passwrd Changed sucessfully" + token).end;
   } catch (error) {
     res.status(400).send("An error occured");
     console.log(error);
@@ -376,7 +454,7 @@ exports.gitCallback = (req, res) => {
     },
   }).then((response) => {
     access_token = response.data.access_token;
-    res.redirect("/auth/success");
+    res.redirect("/auth/gitsuccess");
   });
 };
 

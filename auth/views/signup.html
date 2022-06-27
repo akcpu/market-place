@@ -257,8 +257,8 @@
               >
                 <div class="root">
                   <div class="input-field">
-                    <input id="fullName" name="fullName" type="text" />
-                    <label for="fullName">Full Name</label>
+                    <input id="full_name" name="full_name" type="text" />
+                    <label for="full_name">Full Name</label>
                     <span class="helper-text messages"></span>
                   </div>
                   <div class="input-field">
@@ -284,12 +284,12 @@
                     <label for="confirmPassword">Confirm New Password</label>
                     <span class="helper-text messages"></span>
                   </div>
-                  <input
+                  <!-- <input
                     type="hidden"
                     name="verifyType"
                     id="verifyType"
                     value="{{VerifyType}}"
-                  />
+                  /> -->
                   <!-- <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response" value=""> -->
 
                   <div id="html_element"></div>
@@ -403,7 +403,7 @@
     <script>
       (function () {
         var constraints = {
-          fullName: {
+          full_name: {
             // You need to pick a username too
             presence: true,
             // And it must be between 3 and 20 characters long
@@ -453,22 +453,22 @@
             return;
           }
 
-          let getFullName = document.querySelector("#fullName").value;
-          let getEmail = document.querySelector("#email").value;
-          let getPassword = document.querySelector("#newPassword").value;
+          // let getFullName = document.querySelector("#full_name").value;
+          // let getEmail = document.querySelector("#email").value;
+          // let getPassword = document.querySelector("#newPassword").value;
 
-          const data = {
-            fullName: getFullName,
-            email: getEmail,
-            password: getPassword,
-          };
-          fetch("/auth/signup", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-          });
+          // const data = {
+          //   full_name: getFullName,
+          //   email: getEmail,
+          //   password: getPassword,
+          // };
+          // fetch("/auth/signup", {
+          //   method: "POST",
+          //   headers: {
+          //     "Content-Type": "application/json",
+          //   },
+          //   body: JSON.stringify(data),
+          // });
           // .then((data) => {
           //   console.log("Success:", data + data.json());
           // })
@@ -476,7 +476,7 @@
           //   console.error("Error:", error);
           // });
 
-          // form.submit();
+          form.submit();
           const submitBtn = document.getElementById("submit-btn");
           const progressBtn = document.getElementById("progress-btn");
           submitBtn.style.display = "none";

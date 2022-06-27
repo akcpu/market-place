@@ -12,7 +12,7 @@ exports.signUpBodyValidation = (body) => {
 
 exports.logInBodyValidation = (body) => {
   const schema = Joi.object({
-    email: Joi.string().email().required().label("Email"),
+    username: Joi.string().email().required().label("Email"),
     password: Joi.string().required().label("Password"),
   });
   return schema.validate(body);

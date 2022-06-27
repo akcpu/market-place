@@ -20,7 +20,8 @@ const validate = (user) => {
   const schema = Joi.object({
     full_name: Joi.string(),
     email: Joi.string().email().required(),
-    password: Joi.string().required(),
+    newPassword: Joi.string().min(5).max(15).required(),
+    confirmPassword: Joi.any().valid(Joi.ref("newPassword")).required(),
     verified: Joi.boolean().default(false),
     roles: Joi.string().default("user"),
   });

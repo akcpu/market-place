@@ -1,7 +1,14 @@
 const nodemailer = require("nodemailer");
 const { appConfig } = require("../config");
-const cons = require("consolidate");
-exports.sendEmail = async function (email, subject, text, fileName, link) {
+const fs = require("node:fs");
+exports.sendEmail = async function (
+  userName,
+  email,
+  subject,
+  text,
+  fileName,
+  link
+) {
   try {
     const transporter = nodemailer.createTransport({
       host: appConfig.emailCenter,
@@ -12,20 +19,46 @@ exports.sendEmail = async function (email, subject, text, fileName, link) {
         pass: appConfig.emailPassword,
       },
     });
+    console.log(link);
+    fs.readFile(
+      process.env.PWD + "/function/views/" + fileName + ".html",
+      { encoding: "utf-8" },
+      function (err, html) {
+        if (err) {
+          console.log(err);
+        } else {
+          var mapObj = {
+            "{{AppURL}}": appConfig.AppURL,
+            "{{AppName}}": appConfig.AppName,
+            "{{OrgAvatar}}": appConfig.OrgAvatar,
+            "{{Name}}": userName,
+            "{{Code}}": link,
+            "{{Link}}": link,
+            "{{OrgName}}": appConfig.OrgName,
+          };
+          html = html.replace(
+            /{{AppURL}}|{{AppName}}|{{OrgAvatar}}|{{Name}}|{{Code}}|{{Link}}|{{OrgName}}/gi,
+            function (matched) {
+              return mapObj[matched];
+            }
+          );
 
-    const mailOptions = {
-      from: appConfig.emailAddress, // sender address
-      to: email, // list of receivers
-      subject: subject, // Subject line
-      text: text, // plain text body
-      html: cons.mustache.render(("email_code_verify-css", { Code: link })),
-    };
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        return console.log(error);
+          const mailOptions = {
+            from: appConfig.emailAddress, // sender address
+            to: email, // list of receivers
+            subject: subject, // Subject line
+            text: text, // plain text body
+            html: html,
+          };
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              return console.log(error);
+            }
+            console.log("Email Sending Information: " + info.response);
+          });
+        }
       }
-      console.log("Email Sending Information: " + info);
-    });
+    );
 
     console.log("email sent sucessfully");
   } catch (error) {

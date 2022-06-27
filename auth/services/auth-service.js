@@ -1,8 +1,8 @@
 const User = require("../models/user");
 const Token = require("../models/UserToken");
 
-exports.checkExist = function (reqemail) {
-  let userCheck = User.findOne({ email: reqemail });
+exports.checkExist = function (reqEmail) {
+  let userCheck = User.findOne({ email: reqEmail });
   console.log(userCheck);
   return userCheck;
 };
@@ -20,7 +20,7 @@ exports.login = function (reqemail, reqPassword) {
   return User.findOne({ email: reqemail, password: reqPassword });
 };
 
-exports.findEmail = function (reqEmail) {
+exports.findUserByEmail = function (reqEmail) {
   return User.findOne({ email: reqEmail });
 };
 exports.findUserById = function (user_id) {

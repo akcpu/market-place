@@ -3,9 +3,11 @@ const authRouter = express.Router();
 
 const {
   signUp,
+  showSignUp,
   createUserandSendEmail,
   verifyEmailLink,
   logIn,
+  getLogIn,
   profile,
   logOut,
   getResetUserPassword,
@@ -21,8 +23,10 @@ const {
 } = require("../handlers");
 
 authRouter.post("/auth/create-user", signUp);
+authRouter.get("/auth/signup", showSignUp);
 authRouter.post("/auth/signup", createUserandSendEmail);
 authRouter.get("/auth/user/verify/:id/:token", verifyEmailLink);
+authRouter.get("/auth/login", getLogIn);
 authRouter.post("/auth/login", logIn);
 authRouter.post("/auth/profile", profile);
 authRouter.get("/auth/logout", logOut);
@@ -36,7 +40,7 @@ authRouter.get("/auth/forget_password/:userId/:token", getForgetPassword);
 
 authRouter.get("/auth/github", github);
 authRouter.get("/auth/github/callback", gitCallback);
-authRouter.get("/auth/success", gitSuccess);
+authRouter.get("/auth/gitsuccess", gitSuccess);
 
 authRouter.get("/auth/getUsers", getUsers);
 authRouter.get("/auth/getTokens", getTokens);
