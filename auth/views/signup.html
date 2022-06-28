@@ -284,18 +284,13 @@
                     <label for="confirmPassword">Confirm New Password</label>
                     <span class="helper-text messages"></span>
                   </div>
-                  <!-- <input
-                    type="hidden"
-                    name="verifyType"
-                    id="verifyType"
-                    value="{{VerifyType}}"
-                  /> -->
-                  <!-- <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response" value=""> -->
 
-                  <div id="html_element"></div>
                   <button
+                    data-sitekey="6LcNJ6QgAAAAALmLiLxIuIM08EoIoYAPUv-lWbvG"
+                    data-callback="onSubmit"
+                    data-action="submit"
                     id="submit-btn"
-                    class="btn waves-effect waves-light btn-small submit-button secondary-color accent-3"
+                    class="g-recaptcha btn waves-effect waves-light btn-small submit-button secondary-color accent-3"
                     type="submit"
                     name="action"
                   >
@@ -395,11 +390,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/validate.js/0.13.1/validate.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
-    <script
-      src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit"
-      async
-      defer
-    ></script>
+
+    <script src="https://www.google.com/recaptcha/api.js"></script>
+    <script>
+      function onSubmit(token) {
+        document.getElementById("main").submit();
+      }
+    </script>
+
     <script>
       (function () {
         var constraints = {
@@ -452,30 +450,6 @@
           if (!status) {
             return;
           }
-
-          // let getFullName = document.querySelector("#full_name").value;
-          // let getEmail = document.querySelector("#email").value;
-          // let getPassword = document.querySelector("#newPassword").value;
-
-          // const data = {
-          //   full_name: getFullName,
-          //   email: getEmail,
-          //   password: getPassword,
-          // };
-          // fetch("/auth/signup", {
-          //   method: "POST",
-          //   headers: {
-          //     "Content-Type": "application/json",
-          //   },
-          //   body: JSON.stringify(data),
-          // });
-          // .then((data) => {
-          //   console.log("Success:", data + data.json());
-          // })
-          // .catch((error) => {
-          //   console.error("Error:", error);
-          // });
-
           form.submit();
           const submitBtn = document.getElementById("submit-btn");
           const progressBtn = document.getElementById("progress-btn");
@@ -579,17 +553,6 @@
           alert("Success!");
         }
       })();
-
-      // Recaptcha callback
-      var onloadCallback = function () {
-        grecaptcha.render("html_element", {
-          sitekey: "{{RecaptchaKey}}",
-          // 'callback': function(event) {
-          //     console.log(event)
-          //     document.getElementById('g-recaptcha-response').value = event;
-          // }
-        });
-      };
     </script>
   </body>
 </html>

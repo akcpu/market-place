@@ -71,6 +71,34 @@ exports.showSignUp = async (req, res) => {
 
 // create user and send email
 exports.createUserandSendEmail = async (req, res) => {
+  // getting site key from client side
+  const response_key = req.body["g-recaptcha-response"];
+  // Put secret key here, which we get from google console
+  const secret_key = appConfig.recaptchaSecretKey;
+
+  // Hitting POST request to the URL, Google will
+  // respond with success or error scenario.
+  const url = `https://www.google.com/recaptcha/api/siteverify?secret=${secret_key}&response=${response_key}`;
+
+  try {
+    let result = await axios({
+      method: "post",
+      url: url,
+    });
+    let data = result.data || {};
+    if (!data.success) {
+      console.log("captcha isn't verified!!");
+      throw {
+        success: false,
+        error: "response not valid",
+      };
+    }
+  } catch (err) {
+    console.log(err);
+    throw err.response
+      ? err.response.data
+      : { success: false, error: "captcha_error" };
+  }
   try {
     const { error } = validate(req.body);
     if (error) return res.status(400).send(error.details[0].message);
@@ -255,11 +283,29 @@ exports.profile = async (req, res) => {
       roles +
       "Access successfully",
   });
+
+  const salt = await bcrypt.genSalt(Number(appConfig.SALT));
+  const hashPassword = await bcrypt.hash("123456789", salt);
+
+  const doc = await User.findById(decode._id);
+  doc.full_name = "reza";
+  doc.password = hashPassword;
+  await doc.save();
+
+  res.status(200).json({
+    error: false,
+    message:
+      "username: " +
+      doc.full_name +
+      "password: " +
+      doc.password +
+      "Change successfully",
+  });
 };
 
 exports.logOut = async (req, res) => {
   res.clearCookie("refreshToken");
-  res.clearCookie("token").end;
+  res.clearCookie("token");
   res.status(200).json({
     error: false,
     message: "User LogOut successfully",

@@ -2,6 +2,7 @@ require("dotenv").config();
 
 exports.appConfig = {
   DB_URI: process.env.mongo_host,
+  recaptchaSecretKey: process.env.recaptchaSecretKey,
   clientID: process.env.GITclientID,
   clientSecret: process.env.GITclientSecret,
   accessTPK: process.env.ACCESS_TOKEN_PRIVATE_KEY,
