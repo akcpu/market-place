@@ -1,4 +1,4 @@
 require("dotenv").config();
 exports.appConfig = {
-  host: process.env.mongo_host,
+  DB_URI: process.env.mongo_host,
 };
