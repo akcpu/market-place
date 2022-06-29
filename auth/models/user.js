@@ -22,6 +22,7 @@ const validate = (user) => {
     email: Joi.string().email().required(),
     newPassword: Joi.string().min(5).max(15).required(),
     confirmPassword: Joi.any().valid(Joi.ref("newPassword")).required(),
+    "g-recaptcha-response": Joi.string(),
     verified: Joi.boolean().default(false),
     roles: Joi.string().default("user"),
   });
