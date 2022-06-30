@@ -2,6 +2,9 @@ const { appConfig } = require("../config");
 const authService = require("../services/auth-service");
 const { sendEmail } = require("../utils/sendEmail");
 const axios = require("axios");
+const zxcvbn = require("zxcvbn");
+const bcrypt = require("bcrypt");
+
 var access_token = "";
 require("dotenv").config();
 // const bcrypt = require("bcrypt");
@@ -27,14 +30,12 @@ exports.signUp = async (req, res) => {
         .json({ error: true, message: error.details[0].message });
 
     let user = await authService.getUserDataByEmail(req.body.email);
-    // const user = await User.findOne({ email: req.body.email });
+
     if (user)
       return res
         .status(400)
         .json({ error: true, message: "User with given email already exist" });
 
-    // const salt = await bcrypt.genSalt(Number(appConfig.SALT));
-    // const hashPassword = await bcrypt.hash(req.body.password, salt);
     const hashPassword = await authService.hashPassword(req.body.password);
     await new User({ ...req.body, password: hashPassword }).save();
 
@@ -72,13 +73,28 @@ exports.createUserandSendEmail = async (req, res) => {
   try {
     const { error } = validate(req.body);
     if (error) return res.status(400).send(error.details[0].message);
+    const passStrength = zxcvbn(req.body.newPassword);
+    console.log(
+      `User With Email: ${req.body.email} Password Strength is: ${passStrength.score} and ${passStrength.crack_times_seconds.offline_slow_hashing_1e4_per_second} crack time estimations, in seconds`
+    );
+    if (passStrength.guesses < 37) {
+      console.log(
+        ` *** WARNING *** - User With Email: ${req.body.email} Password Strength is: ${passStrength.guesses}`
+      );
+      return res
+        .status(400)
+        .send(
+          `Password is not strong enough! Password Strength - Guesses ${passStrength.guesses} `
+        );
+    }
+
     await authService.recaptchaV3(req.body["g-recaptcha-response"]);
 
     let user = await authService.getUserDataByEmail(req.body.email);
     if (user)
       return res.status(400).send("User with given email already exist!");
-
-    const hashPassword = await authService.hashPassword(req.body.newPassword);
+    const salt = await bcrypt.genSalt(Number(appConfig.SALT));
+    const hashPassword = await bcrypt.hash(req.body.newPassword, salt);
 
     user = await authService.createUser(
       req.body.full_name,
@@ -88,7 +104,7 @@ exports.createUserandSendEmail = async (req, res) => {
 
     let verifyToken = await authService.createVerifyToken(user._id);
 
-    const link = `${appConfig.serviceURL}/user/verify/${user.id}/${verifyToken.token}`;
+    const link = `${appConfig.authServiceURL}/user/verify/${user.id}/${verifyToken.token}`;
     await sendEmail(
       user.full_name,
       user.email,
@@ -166,7 +182,6 @@ exports.logIn = async (req, res) => {
     );
     if (!checkUserVerify)
       return res.status(401).json({ error: true, message: "Unverified email" });
-    // const hashPassword = await authService.hashPassword(req.body.password);
 
     const checkPasswordVerify = await authService.checkPasswordVerify(
       req.body.password,

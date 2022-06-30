@@ -8,10 +8,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 
 exports.hashPassword = function (plainTextPassword) {
-  console.log(plainTextPassword);
   const salt = bcrypt.genSalt(Number(appConfig.SALT));
-  console.log(salt);
-
   const hashPassword = bcrypt.hash(plainTextPassword, salt);
   console.log(hashPassword);
 

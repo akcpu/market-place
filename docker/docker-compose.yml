@@ -1,6 +1,6 @@
 services:
   web:
-    build: "../web"
+    build: "../micros/web"
     ports:
       - "3000:3000"
 
@@ -14,7 +14,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ../web/public:/srv/www/static
+      - ../micros/web/public:/srv/www/static
       - ../default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - web
