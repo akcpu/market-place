@@ -15,7 +15,6 @@ const {
   getForgetPasswordPage,
   forgetPassword,
   getForgetPassword,
-  github,
   gitCallback,
   gitSuccess,
   getUsers,
@@ -38,7 +37,6 @@ authRouter.get("/auth/forget_password", getForgetPasswordPage);
 authRouter.post("/auth/forget_password", forgetPassword);
 authRouter.get("/auth/forget_password/:userId/:token", getForgetPassword);
 
-authRouter.get("/auth/github", github);
 authRouter.get("/auth/github/callback", gitCallback);
 authRouter.get("/auth/gitsuccess", gitSuccess);
 

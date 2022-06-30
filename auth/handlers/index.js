@@ -1,23 +1,19 @@
 const { appConfig } = require("../config");
+const authService = require("../services/auth-service");
+const { sendEmail } = require("../utils/sendEmail");
 const axios = require("axios");
-const clientID = appConfig.clientID;
-const clientSecret = appConfig.clientSecret;
 var access_token = "";
 require("dotenv").config();
-const bcrypt = require("bcrypt");
+// const bcrypt = require("bcrypt");
 //Auth const
 const {
   signUpBodyValidation,
   logInBodyValidation,
 } = require("../utils/validationSchema");
 const generateTokens = require("../utils/generateTokens");
-//Token const
-const UserToken = require("../models/UserToken");
-const jwt = require("jsonwebtoken");
+
 // const User = require("../models/User");
 const { User, validate } = require("../models/user");
-const { sendEmail } = require("../utils/sendEmail");
-const crypto = require("crypto");
 const Joi = require("joi");
 // const nodemailer = require("nodemailer");
 
@@ -30,23 +26,24 @@ exports.signUp = async (req, res) => {
         .status(400)
         .json({ error: true, message: error.details[0].message });
 
-    const user = await User.findOne({ email: req.body.email });
+    let user = await authService.getUserDataByEmail(req.body.email);
+    // const user = await User.findOne({ email: req.body.email });
     if (user)
       return res
         .status(400)
         .json({ error: true, message: "User with given email already exist" });
 
-    const salt = await bcrypt.genSalt(Number(appConfig.SALT));
-    const hashPassword = await bcrypt.hash(req.body.password, salt);
-
+    // const salt = await bcrypt.genSalt(Number(appConfig.SALT));
+    // const hashPassword = await bcrypt.hash(req.body.password, salt);
+    const hashPassword = await authService.hashPassword(req.body.password);
     await new User({ ...req.body, password: hashPassword }).save();
 
     res.status(201).json({
       error: false,
       message:
-        "Account created sucessfully" +
-        "salt: " +
-        salt +
+        "Account Creation Error" +
+        "user:" +
+        user +
         "hashPassword: " +
         hashPassword,
     });
@@ -65,63 +62,33 @@ exports.showSignUp = async (req, res) => {
     Title: "Create User",
     OrgAvatar: appConfig.OrgAvatar,
     ActionForm: "/auth/signup",
+    SiteKey: appConfig.recaptchaSiteKey,
   };
   res.render("signup", viewdata);
 };
 
 // create user and send email
 exports.createUserandSendEmail = async (req, res) => {
-  // getting site key from client side
-  const response_key = req.body["g-recaptcha-response"];
-  // Put secret key here, which we get from google console
-  const secret_key = appConfig.recaptchaSecretKey;
-
-  // Hitting POST request to the URL, Google will
-  // respond with success or error scenario.
-  const url = `https://www.google.com/recaptcha/api/siteverify?secret=${secret_key}&response=${response_key}`;
-
-  try {
-    let result = await axios({
-      method: "post",
-      url: url,
-    });
-    let data = result.data || {};
-    if (!data.success) {
-      console.log("captcha isn't verified!!");
-      throw {
-        success: false,
-        error: "response not valid",
-      };
-    }
-  } catch (err) {
-    console.log(err);
-    throw err.response
-      ? err.response.data
-      : { success: false, error: "captcha_error" };
-  }
   try {
     const { error } = validate(req.body);
     if (error) return res.status(400).send(error.details[0].message);
+    await authService.recaptchaV3(req.body["g-recaptcha-response"]);
 
-    let user = await User.findOne({ email: req.body.email });
+    let user = await authService.getUserDataByEmail(req.body.email);
     if (user)
       return res.status(400).send("User with given email already exist!");
 
-    const salt = await bcrypt.genSalt(Number(appConfig.SALT));
-    const hashPassword = await bcrypt.hash(req.body.newPassword, salt);
+    const hashPassword = await authService.hashPassword(req.body.newPassword);
 
-    user = await new User({
-      full_name: req.body.full_name,
-      email: req.body.email,
-      password: hashPassword,
-    }).save();
+    user = await authService.createUser(
+      req.body.full_name,
+      req.body.email,
+      hashPassword
+    );
 
-    let token = await new UserToken({
-      userId: user._id,
-      token: crypto.randomBytes(32).toString("hex"),
-    }).save();
-    const link = `${appConfig.serviceURL}/user/verify/${user.id}/${token.token}`;
+    let verifyToken = await authService.createVerifyToken(user._id);
 
+    const link = `${appConfig.serviceURL}/user/verify/${user.id}/${verifyToken.token}`;
     await sendEmail(
       user.full_name,
       user.email,
@@ -143,32 +110,14 @@ exports.createUserandSendEmail = async (req, res) => {
 // verify link sent by email
 exports.verifyEmailLink = async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.params.id });
+    const user = await authService.checkUserExistById(req.params.id);
     if (!user) return res.status(400).send("Invalid link");
 
-    const token = await UserToken.findOne({
-      userId: user._id,
-      token: req.params.token,
-    });
+    const token = await authService.checkTokenExist(user._id, req.params.token);
     if (!token) return res.status(400).send("Invalid link");
 
-    User.updateOne({ _id: user._id }, { verified: true })
-      .then((obj) => {
-        console.log("updateOne Updated - " + obj);
-        // res.redirect("orders");
-      })
-      .catch((err) => {
-        console.log("updateOne Error: " + err);
-      });
-
-    await UserToken.findByIdAndRemove(token._id)
-      .then((obj) => {
-        console.log("findByIdAndRemove - " + obj);
-        // res.redirect("orders");
-      })
-      .catch((err) => {
-        console.log("findByIdAndRemove Error: " + err);
-      });
+    await authService.updateVerifyUser(user._id, true);
+    await authService.findByIdAndRemoveToken(token._id);
 
     var viewdata = {
       Message: "email verified sucessfully",
@@ -183,6 +132,7 @@ exports.getLogIn = async (req, res) => {
   let gitClientID = appConfig.clientID
     ? "https://github.com/login/oauth/authorize?client_id=" + appConfig.clientID
     : "";
+
   var viewdata = {
     AppName: appConfig.AppName,
     OrgName: appConfig.OrgName,
@@ -205,38 +155,30 @@ exports.logIn = async (req, res) => {
       return res
         .status(400)
         .json({ error: true, message: error.details[0].message });
-
-    const user = await User.findOne({ email: req.body.username });
+    const user = await authService.getUserDataByEmail(req.body.username);
     if (!user)
       return res
         .status(401)
         .json({ error: true, message: "Invalid email or password" });
 
-    const verifiedUser = await User.findOne(
-      { email: req.body.username },
-      { verified: true }
+    const checkUserVerify = await authService.checkUserVerify(
+      req.body.username
     );
-    if (!verifiedUser)
+    if (!checkUserVerify)
       return res.status(401).json({ error: true, message: "Unverified email" });
+    // const hashPassword = await authService.hashPassword(req.body.password);
 
-    const salt = await bcrypt.genSalt(Number(appConfig.SALT));
-    const hashPassword = await bcrypt.hash(req.body.password, salt);
-    const verifiedPassword = await bcrypt.compare(
+    const checkPasswordVerify = await authService.checkPasswordVerify(
       req.body.password,
       user.password
     );
-    if (!verifiedPassword)
+
+    if (!checkPasswordVerify)
       return res.status(401).json({
         error: true,
-        message:
-          "Invalid email or password!!" +
-          "req.body.password: " +
-          req.body.password +
-          "hashPassword: " +
-          hashPassword +
-          "user.password: " +
-          user.password,
+        message: "Invalid email or password!!",
       });
+
     // If you request a user login with a user role,
     // use the refresh Token to log in, and other roles must use accessToken
     res.cookie("token", await generateTokens.accessToken(user));
@@ -260,16 +202,17 @@ exports.profile = async (req, res) => {
   if (!token) {
     return res.status(401).end();
   }
-  const decode = await jwt.verify(token, appConfig.accessTPK);
-  const findUser = await User.findById(decode._id);
+  const findUser = authService.findUserByAccessToken(token);
   if (!findUser) {
     return res.status(401).end();
   }
+
   const { _id, full_name, email, password, verified, roles } = findUser;
   res.status(200).json({
     error: false,
     message:
       "username: " +
+      full_name +
       "_id: " +
       _id +
       "full_name: " +
@@ -284,23 +227,23 @@ exports.profile = async (req, res) => {
       "Access successfully",
   });
 
-  const salt = await bcrypt.genSalt(Number(appConfig.SALT));
-  const hashPassword = await bcrypt.hash("123456789", salt);
+  // const salt = await bcrypt.genSalt(Number(appConfig.SALT));
+  // const hashPassword = await bcrypt.hash("123456789", salt);
 
-  const doc = await User.findById(decode._id);
-  doc.full_name = "reza";
-  doc.password = hashPassword;
-  await doc.save();
+  // const doc = await User.findById(decode._id);
+  // doc.full_name = "reza";
+  // doc.password = hashPassword;
+  // await doc.save();
 
-  res.status(200).json({
-    error: false,
-    message:
-      "username: " +
-      doc.full_name +
-      "password: " +
-      doc.password +
-      "Change successfully",
-  });
+  // res.status(200).json({
+  //   error: false,
+  //   message:
+  //     "username: " +
+  //     doc.full_name +
+  //     "password: " +
+  //     doc.password +
+  //     "Change successfully",
+  // });
 };
 
 exports.logOut = async (req, res) => {
@@ -318,8 +261,7 @@ exports.getResetUserPassword = async (req, res) => {
   if (!token) {
     return res.status(401).end();
   }
-  const decode = await jwt.verify(token, appConfig.accessTPK);
-  const findUser = await User.findById(decode._id);
+  const findUser = await authService.findUserByAccessToken(token);
   if (!findUser) {
     return res.status(401).end();
   }
@@ -337,43 +279,20 @@ exports.getResetUserPassword = async (req, res) => {
 
 // Change User password
 exports.resetUserPassword = async (req, res) => {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401).end();
-  }
-  console.log("token: " + token);
-
-  const decode = await jwt.verify(token, appConfig.accessTPK);
-  const findUser = await User.findById(decode._id);
-  if (!findUser) {
-    return res.status(401).end();
-  }
-  console.log("----------------");
-  const { _id, full_name, email, password, verified, roles } = findUser;
-  res.status(200).json({
-    error: false,
-    message:
-      "username: " +
-      "_id: " +
-      _id +
-      "full_name: " +
-      full_name +
-      "email: " +
-      email +
-      "password: " +
-      password +
-      "verified: " +
-      verified +
-      roles +
-      "Access successfully",
-  });
-  let newPassword = req.body.newPassword;
   try {
-    const salt = await bcrypt.genSalt(Number(appConfig.SALT));
-    const hashPassword = await bcrypt.hash(newPassword, salt);
-    findUser.password = hashPassword;
-    await findUser.save();
-    // await token.delete();
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).end();
+    }
+    console.log("token: " + token);
+    const findUser = authService.changeUserPasswordByAccessToken(
+      token,
+      req.body.newPassword
+    );
+    if (!findUser) {
+      return res.status(401).end();
+    }
+
     res.clearCookie("token");
     res.clearCookie("refreshToken");
 
@@ -407,19 +326,14 @@ exports.forgetPassword = async (req, res) => {
     const { error } = schema.validate(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const user = await User.findOne({ email: req.body.email });
+    const user = await authService.getUserDataByEmail(req.body.email);
     if (!user)
       return res.status(400).send("user with given email doesn't exist");
 
-    let token = await UserToken.findOne({ userId: user._id });
-    if (!token) {
-      token = await new UserToken({
-        userId: user._id,
-        token: crypto.randomBytes(32).toString("hex"),
-      }).save();
-    }
-
-    const link = `${appConfig.serviceURL}/forget_password/${user._id}/${token.token}`;
+    let token = await authService.getTokenByUserId(user._id);
+    if (!token) token = await authService.createToken(user._id);
+    console.log(token);
+    const link = `${appConfig.authServiceURL}/forget_password/${user._id}/${token.token}`;
 
     await sendEmail(
       user.full_name,
@@ -442,25 +356,16 @@ exports.forgetPassword = async (req, res) => {
 
 // Forget password
 exports.getForgetPassword = async (req, res) => {
-  let requserId = req.params.userId;
+  let reqUserId = req.params.userId;
   let reqToken = req.params.token;
   try {
-    const user = await User.findOne({ _id: requserId });
+    const user = await authService.findUserById(reqUserId);
     if (!user) return res.status(400).send("Invalid link");
 
-    const token = await UserToken.findOne({
-      userId: user._id,
-      token: reqToken,
-    });
+    const token = await authService.checkTokenExist(user._id, reqToken);
     if (!token) return res.status(400).send("Invalid link");
 
-    await UserToken.findByIdAndRemove(token._id)
-      .then((obj) => {
-        console.log("findByIdAndRemove - " + obj);
-      })
-      .catch((err) => {
-        console.log("findByIdAndRemove Error: " + err);
-      });
+    await authService.findByIdAndRemoveToken(token._id);
     res.cookie("token", await generateTokens.accessToken(user));
 
     var viewdata = {
@@ -480,20 +385,13 @@ exports.getForgetPassword = async (req, res) => {
   }
 };
 
-// show Github login page
-exports.github = (req, res) => {
-  var viewdata = { client_id: clientID };
-  res.render("index", viewdata);
-};
-
 // Declare the callback github route
 exports.gitCallback = (req, res) => {
   // The req.query object has the query params that were sent to this route.
   const requestToken = req.query.code;
-
   axios({
     method: "post",
-    url: `https://github.com/login/oauth/access_token?client_id=${clientID}&client_secret=${clientSecret}&code=${requestToken}`,
+    url: `https://github.com/login/oauth/access_token?client_id=${appConfig.clientID}&client_secret=${appConfig.clientSecret}&code=${requestToken}`,
     // Set the content type header, so that we get the response in JSON
     headers: {
       accept: "application/json",
@@ -520,13 +418,15 @@ exports.gitSuccess = (req, res) => {
 
 // Show all Users
 exports.getUsers = async (_req, res) => {
-  await User.find()
+  await authService
+    .getUsers()
     .then((users) => res.send(users))
     .catch(() => res.status(404).json({ msg: "No user found" }));
 };
 // Show all Tokens
 exports.getTokens = async (_req, res) => {
-  await UserToken.find()
+  await authService
+    .getTokens()
     .then((tokens) => res.send(tokens))
     .catch(() => res.status(404).json({ msg: "No token found" }));
 };
