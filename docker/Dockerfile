@@ -34,12 +34,12 @@ COPY docker/main/index.js ./
 # entry allows caching of npm install
 
 WORKDIR /home/app/function
-COPY $MICRONAME/package.json ./
+COPY micros/$MICRONAME/package.json ./
 
 RUN npm i
 
 # COPY function files and folders
-COPY $MICRONAME ./
+COPY micros/$MICRONAME ./
 
 # Run any tests that may be available
 RUN npm test
