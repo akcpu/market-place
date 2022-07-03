@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 exports.appConfig = {
   DB_URI: process.env.mongo_host,
   recaptchaSiteKey: process.env.recaptchaSiteKey, //reCAPTCHA type:v3 - in the HTML code your site serves to users

@@ -6,7 +6,6 @@ const zxcvbn = require("zxcvbn");
 const bcrypt = require("bcrypt");
 
 var access_token = "";
-require("dotenv").config();
 // const bcrypt = require("bcrypt");
 //Auth const
 const {
