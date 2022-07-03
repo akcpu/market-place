@@ -1,4 +1,3 @@
-require("dotenv").config();
 const { appConfig } = require("../config");
 const mongoose = require("mongoose");
 exports.connect = function () {
