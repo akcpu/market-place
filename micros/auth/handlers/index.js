@@ -4,7 +4,7 @@ const { sendEmail } = require("../utils/sendEmail");
 const axios = require("axios");
 const zxcvbn = require("zxcvbn");
 const bcrypt = require("bcrypt");
-
+const log = require("../utils/error-handler");
 var access_token = "";
 // const bcrypt = require("bcrypt");
 //Auth const
@@ -68,58 +68,70 @@ exports.showSignUp = async (req, res) => {
 };
 
 // create user and send email
-exports.createUserandSendEmail = async (req, res) => {
-  try {
-    const { error } = validate(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
-    const passStrength = zxcvbn(req.body.newPassword);
+exports.createUserandSendEmail = async (req, res, next) => {
+  // try {
+  const { full_name, email, newPassword } = req.body;
+
+  // if model.User.Fullname == "" {
+  // 	log.Error("SignupTokenHandle: missing fullname")
+  // 	return c.Status(http.StatusBadRequest).JSON(utils.Error("missingFullname", "Missing fullname"))
+  // }
+
+  console.log(full_name);
+  console.log(email);
+  console.log(newPassword);
+  console.log(req.body["g-recaptcha-response"]);
+  // console.log(verifiedType);
+  // console.log(ResponseType);
+  const { error } = validate(req.body);
+  // if (error) return next(error);
+  // // if (error) return res.status(400).send(error.details[0].message);
+  const passStrength = zxcvbn(req.body.newPassword);
+  console.log(
+    `User With Email: ${req.body.email} Password Strength is: ${passStrength.score} and ${passStrength.crack_times_display.online_no_throttling_10_per_second} crack time estimations`
+  );
+  if (passStrength.guesses < 37) {
     console.log(
-      `User With Email: ${req.body.email} Password Strength is: ${passStrength.score} and ${passStrength.crack_times_seconds.offline_slow_hashing_1e4_per_second} crack time estimations, in seconds`
+      ` *** WARNING *** - User With Email: ${req.body.email} Password Strength is: ${passStrength.guesses}`
     );
-    if (passStrength.guesses < 37) {
-      console.log(
-        ` *** WARNING *** - User With Email: ${req.body.email} Password Strength is: ${passStrength.guesses}`
-      );
-      return res
-        .status(400)
-        .send(
-          `Password is not strong enough! Password Strength - Guesses ${passStrength.guesses} `
-        );
-    }
-
-    await authService.recaptchaV3(req.body["g-recaptcha-response"]);
-
-    let user = await authService.getUserDataByEmail(req.body.email);
-    if (user)
-      return res.status(400).send("User with given email already exist!");
-    const salt = await bcrypt.genSalt(Number(appConfig.SALT));
-    const hashPassword = await bcrypt.hash(req.body.newPassword, salt);
-
-    user = await authService.createUser(
-      req.body.full_name,
-      req.body.email,
-      hashPassword
-    );
-
-    let verifyToken = await authService.createVerifyToken(user._id);
-
-    const link = `${appConfig.authServiceURL}/user/verify/${user.id}/${verifyToken.token}`;
-    await sendEmail(
-      user.full_name,
-      user.email,
-      "Verify Email, " + user.full_name,
-      link,
-      "email_code_verify-css",
-      link
-    );
-
-    var viewdata = {
-      Message: "An Email sent to your account please verify.",
-    };
-    res.render("message", viewdata);
-  } catch (error) {
-    res.status(400).send("error: " + error + "An error occured");
+    return next(passStrength);
   }
+
+  let recaptchaV3 = await authService.recaptchaV3(
+    req.body["g-recaptcha-response"]
+  );
+  if (!recaptchaV3.success) return next({ name: "captcha_error" });
+  let user = await authService.getUserDataByEmail(req.body.email);
+  // if (user) return res.status(400).send("User with given email already exist!");
+  if (user) return next({ name: "conflict" });
+  const salt = await bcrypt.genSalt(Number(appConfig.SALT));
+  const hashPassword = await bcrypt.hash(req.body.newPassword, salt);
+
+  user = await authService.createUser(
+    req.body.full_name,
+    req.body.email,
+    hashPassword
+  );
+
+  let verifyToken = await authService.createVerifyToken(user._id);
+
+  const link = `${appConfig.authServiceURL}/user/verify/${user.id}/${verifyToken.token}`;
+  await sendEmail(
+    user.full_name,
+    user.email,
+    "Verify Email, " + user.full_name,
+    link,
+    "email_code_verify-css",
+    link
+  );
+
+  var viewdata = {
+    Message: "An Email sent to your account please verify.",
+  };
+  res.render("message", viewdata);
+  // } catch (error) {
+  // res.status(400).send("error: " + error + "An error occured");
+  // }
 };
 
 // verify link sent by email

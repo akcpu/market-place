@@ -1,30 +1,36 @@
 const app = require("express")();
 const db = require("./database");
+
 const authRouter = require("./router");
+app.use(authRouter);
 
-const express = require("express");
-const bodyParser = require("body-parser");
-
-// const app = express();
-app.use(bodyParser.urlencoded({ extended: true }));
-const cookieParser = require("cookie-parser");
-
-app.use(cookieParser());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-// Connect to the database
-db.connect();
-
+let x = db.connect();
+console.log(x);
 const cons = require("consolidate");
-// assign the mustache engine to .html files
 app.engine("html", cons.mustache);
-// set .html as the default extension
 app.set("view engine", "html");
 app.set("views", __dirname + "/views");
 
-// Use the router for the auth routes
-app.use(authRouter);
+module.exports = app;
+
+// const express = require("express");
+// const bodyParser = require("body-parser");
+// app.use(bodyParser.urlencoded({ extended: true }));
+// const cookieParser = require("cookie-parser");
+// app.use(cookieParser());
+// app.use(express.urlencoded({ extended: true }));
+// app.use(express.json());
+
+// require("express-async-errors");
+// const {
+//   notFound,
+//   errorLogger,
+//   errorHandler,
+// } = require("./utils/error-handler");
+
+// app.use(notFound);
+// app.use(errorHandler);
+// app.use(errorLogger);
 // app.listen(8092, () => {
 //   console.log("Listening to Port ", 8092);
 // });
-module.exports = app;

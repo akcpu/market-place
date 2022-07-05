@@ -35,12 +35,9 @@ exports.recaptchaV3 = async function (response_key) {
     });
     let data = result.data || {};
     if (!data.success) {
-      console.log("captcha isn't verified!!");
-      throw {
-        success: false,
-        error: "response not valid",
-      };
+      return { success: false };
     }
+    return { success: true };
   } catch (err) {
     console.log(err);
     throw err.response

@@ -21,7 +21,7 @@ exports.sendEmail = async function (
     });
     console.log(link);
     fs.readFile(
-      process.env.PWD + "/function/views/" + fileName + ".html",
+      __dirname + "/../views/" + fileName + ".html",
       { encoding: "utf-8" },
       function (err, html) {
         if (err) {
