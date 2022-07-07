@@ -1,17 +1,14 @@
 const { appConfig } = require("../config");
 const mongoose = require("mongoose");
-const log = require("../utils/error-handler");
+const log = require("../utils/errorLogger");
+const utils = require("../utils/error-handler");
 
 exports.connect = function () {
   mongoose
-    .connect(appConfig.DB_URIp)
+    .connect(appConfig.DB_URI)
     .then(() => console.info("MongoDB Connected"))
     .catch((err) => {
       log.Error(err);
-
-      log.ErrorViewer(
-        "Database Error!",
-        "Please set valid database type in confing file!"
-      );
+      throw new utils.ErrorHandler("DBError", "Problem in MongoDB Connection");
     });
 };

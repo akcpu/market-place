@@ -17,4 +17,5 @@ exports.appConfig = {
   AppName: process.env.AppName,
   OrgAvatar: process.env.OrgAvatar,
   OrgName: process.env.OrgName,
+  Node_ENV: process.env.Node_ENV,
 };

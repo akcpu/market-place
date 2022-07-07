@@ -19,7 +19,7 @@ exports.sendEmail = async function (
         pass: appConfig.emailPassword,
       },
     });
-    console.log(link);
+    if (appConfig.Node_ENV === "development") console.log(link);
     fs.readFile(
       __dirname + "/../views/" + fileName + ".html",
       { encoding: "utf-8" },
@@ -52,16 +52,16 @@ exports.sendEmail = async function (
           };
           transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
-              return console.log(error);
+              console.log(error);
+              return false;
             }
             console.log("Email Sending Information: " + info.response);
+            return true;
           });
         }
       }
     );
-
-    console.log("email sent sucessfully");
   } catch (error) {
-    console.log(error, "email not sent");
+    return false;
   }
 };
