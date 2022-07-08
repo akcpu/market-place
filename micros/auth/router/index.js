@@ -1,5 +1,6 @@
 const express = require("express");
 const authRouter = express.Router();
+require("../utils/googleOauth");
 
 const {
   showSignUp,
