@@ -6,7 +6,6 @@ const { User } = require("../models/user");
 const UserToken = require("../models/UserToken");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-
 exports.hashPassword = function (plainTextPassword) {
   const salt = bcrypt.genSalt(Number(appConfig.SALT));
   const hashPassword = bcrypt.hash(plainTextPassword, salt);
@@ -35,17 +34,11 @@ exports.recaptchaV3 = async function (response_key) {
     });
     let data = result.data || {};
     if (!data.success) {
-      console.log("captcha isn't verified!!");
-      throw {
-        success: false,
-        error: "response not valid",
-      };
+      return { success: false };
     }
+    return { success: true };
   } catch (err) {
-    console.log(err);
-    throw err.response
-      ? err.response.data
-      : { success: false, error: "captcha_error" };
+    throw err.response ? err.response.data : `Error while recaptcha : ${err}`;
   }
 };
 
@@ -147,58 +140,3 @@ exports.getTokens = async function () {
 exports.saveUser = function (findUser) {
   findUser.save();
 };
-
-////////////////////////////////////
-// const Token = require("../models/UserToken");
-///////////////////////////////
-
-// exports.register = function (ruser) {
-//   const registerUser = new User({
-//     full_name: ruser.full_name,
-//     email: ruser.email,
-//     password: ruser.password,
-//   });
-//   return registerUser.save();
-// };
-
-// exports.login = function (reqemail, reqPassword) {
-//   return User.findOne({ email: reqemail, password: reqPassword });
-// };
-
-// exports.findUserByEmail = function (reqEmail) {
-//   return User.findOne({ email: reqEmail });
-// };
-
-// exports.findToken = function (user_id) {
-//   return Token.findOne({ userId: user_id });
-// };
-// exports.findTokenByuserIdToken = function (user_id, reqToken) {
-//   return Token.findOne({
-//     userId: user_id,
-//     token: reqToken,
-//   });
-// };
-// exports.createToken = function (reqEmail, user_id) {
-//   const user = User.findOne({ email: reqEmail });
-//   let token = Token.findOne({ userId: user_id });
-//   token = new Token({
-//     userId: user._id,
-//     token: crypto.randomBytes(32).toString("hex"),
-//   }).save();
-//   return token;
-// };
-// exports.verifyToken = function (user_id, crypto) {
-//   const token = new Token({
-//     userId: user_id,
-//     token: crypto,
-//   }).save();
-//   return token;
-// };
-
-// exports.verifyUser = asyncfunction (user_id, bool) {
-//   await User.updateOne({ _id: user_id, verified: bool });
-// };
-
-// exports.tokenRemove =async function (token_id) {
-//   await Token.findByIdAndRemove(token_id);
-// };

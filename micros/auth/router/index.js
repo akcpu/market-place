@@ -2,7 +2,6 @@ const express = require("express");
 const authRouter = express.Router();
 
 const {
-  signUp,
   showSignUp,
   createUserandSendEmail,
   verifyEmailLink,
@@ -21,7 +20,6 @@ const {
   getTokens,
 } = require("../handlers");
 
-authRouter.post("/auth/create-user", signUp);
 authRouter.get("/auth/signup", showSignUp);
 authRouter.post("/auth/signup", createUserandSendEmail);
 authRouter.get("/auth/user/verify/:id/:token", verifyEmailLink);
