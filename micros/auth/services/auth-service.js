@@ -6,7 +6,6 @@ const { User } = require("../models/user");
 const UserToken = require("../models/UserToken");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const catchAsyncError = require("../services/catch");
 exports.hashPassword = function (plainTextPassword) {
   const salt = bcrypt.genSalt(Number(appConfig.SALT));
   const hashPassword = bcrypt.hash(plainTextPassword, salt);

@@ -19,7 +19,6 @@ const Joi = require("joi");
 
 const log = require("../utils/errorLogger");
 const utils = require("../utils/error-handler");
-const catchAsyncError = require("../services/catch");
 
 // Get SignUp Page
 exports.showSignUp = async (req, res) => {
