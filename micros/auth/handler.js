@@ -3,7 +3,7 @@ const db = require("./database");
 const errorService = require("../../micros/auth/services/errors");
 const authRouter = require("./router");
 const session = require("express-session");
-const { appConfig } = require("../config");
+const { appConfig } = require("../auth/config");
 app.use(
   session({
     resave: false,
