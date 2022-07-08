@@ -178,6 +178,7 @@ exports.getLogIn = async (req, res) => {
     ResetPassLink: "/auth/forget_password",
     SignupLink: "/auth/signup",
     GithubLink: gitClientID,
+    GoogleLink: "/auth/google",
     Title: "signup",
     OrgAvatar: appConfig.OrgAvatar,
   };
