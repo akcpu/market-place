@@ -115,16 +115,14 @@ exports.createUserandSendEmail = async (req, res, next) => {
   let verifyToken = await authService.createVerifyToken(user._id);
 
   const link = `${appConfig.authServiceURL}/user/verify/${user.id}/${verifyToken.token}`;
-  let sendMail = false;
-  sendMail = await sendEmail(
+  await sendEmail(
     user.full_name,
     user.email,
     "Verify Email, " + user.full_name,
     link,
     "email_code_verify-css",
     link
-  );
-  if (!sendMail) {
+  ).catch(() => {
     log.Error("Error happened in sending Email!");
     return next(
       new utils.ErrorHandler(
@@ -132,7 +130,8 @@ exports.createUserandSendEmail = async (req, res, next) => {
         "Error happened in sending email! - " + req.body.email
       )
     );
-  }
+  });
+
   var viewdata = {
     Message: "An Email sent to your account please verify.",
   };

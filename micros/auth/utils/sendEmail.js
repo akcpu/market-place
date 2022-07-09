@@ -9,7 +9,6 @@ exports.sendEmail = async function (
   fileName,
   link
 ) {
-  let ok = true;
   try {
     const transporter = nodemailer.createTransport({
       host: appConfig.emailCenter,
@@ -27,7 +26,7 @@ exports.sendEmail = async function (
       function (err, html) {
         if (err) {
           console.log(err);
-          ok = false;
+          throw new Error();
         } else {
           var mapObj = {
             "{{AppURL}}": appConfig.AppURL,
@@ -54,8 +53,7 @@ exports.sendEmail = async function (
           };
           transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
-              console.log(error);
-              ok = false;
+              throw new Error("Problem in mailOptions sendMail");
             }
             console.log("Email Sending Information: " + info.response);
           });
@@ -63,7 +61,6 @@ exports.sendEmail = async function (
       }
     );
   } catch (error) {
-    return (ok = false);
+    throw new Error();
   }
-  return ok;
 };
