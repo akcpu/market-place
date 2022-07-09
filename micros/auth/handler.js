@@ -8,7 +8,7 @@ app.use(
   session({
     resave: false,
     saveUninitialized: true,
-    secret: appConfig.YOUR_SESSION_SECRET_KEY,
+    secret: appConfig.SESSION_SECRET_KEY,
   })
 );
 const passport = require("passport");
