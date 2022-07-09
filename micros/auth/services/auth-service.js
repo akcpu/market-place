@@ -103,16 +103,23 @@ exports.findUserByAccessToken = async function (token) {
   }
 };
 
-exports.changeUserPasswordByAccessToken = async function (token, reqPassword) {
+exports.changeUserPasswordByAccessToken = async function (
+  oldPassword,
+  token,
+  reqPassword
+) {
   try {
     const decode = await jwt.verify(token, appConfig.accessTPK);
-    let findUser = await User.findById(decode._id);
     const salt = await bcrypt.genSalt(Number(appConfig.SALT));
+    let findUser = await User.findById(decode._id);
+    if (!bcrypt.compareSync(oldPassword, findUser.password)) {
+      throw new Error();
+    }
     const hashPassword = await bcrypt.hash(reqPassword, salt);
     findUser.password = hashPassword;
     findUser.save();
   } catch (error) {
-    return 0;
+    throw new Error(error);
   }
 };
 

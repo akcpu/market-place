@@ -180,7 +180,7 @@ exports.getLogIn = async (req, res) => {
     SignupLink: "/auth/signup",
     GithubLink: gitClientID,
     GoogleLink: "/auth/google",
-    Title: "signup",
+    Title: "Login",
     OrgAvatar: appConfig.OrgAvatar,
   };
   res.render("login", viewdata);
@@ -293,8 +293,8 @@ exports.profile = async (req, res) => {
 };
 
 exports.logOut = async (req, res) => {
-  res.clearCookie("refreshToken");
   res.clearCookie("token");
+  res.clearCookie("refreshToken");
   res.status(200).json({
     error: false,
     message: "User LogOut successfully",
@@ -339,25 +339,32 @@ exports.resetUserPassword = async (req, res, next) => {
         new utils.ErrorHandler("missingloginAuth", "Missing Authentication")
       );
     }
-    console.log("token: " + token);
-    const findUser = authService.changeUserPasswordByAccessToken(
-      token,
-      req.body.newPassword
-    );
-    if (!findUser) {
-      log.Error("ResetPassHandle: Find User Problem");
-      return next(
-        new utils.ErrorHandler("missingloginFind", "Missing Find User")
-      );
-    }
+    await authService
+      .changeUserPasswordByAccessToken(
+        req.body.oldPassword,
+        token,
+        req.body.newPassword
+      )
+      .then(() => {
+        res.clearCookie("token");
+        res.clearCookie("refreshToken");
 
-    res.clearCookie("token");
-    res.clearCookie("refreshToken");
-
-    var viewdata = {
-      Message: "change password sucessfully.",
-    };
-    res.render("message", viewdata);
+        var viewdata = {
+          Message: "change password sucessfully.",
+        };
+        res.render("message", viewdata);
+      })
+      .catch(() => {
+        res.clearCookie("token");
+        res.clearCookie("refreshToken");
+        log.Error("ResetPassHandle: Find User Problem");
+        return next(
+          new utils.ErrorHandler(
+            "missingResetPassword",
+            "Missing Reset Password"
+          )
+        );
+      });
   } catch (error) {
     console.log(error);
     res.send("An error occured");
