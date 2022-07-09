@@ -115,7 +115,8 @@ exports.createUserandSendEmail = async (req, res, next) => {
   let verifyToken = await authService.createVerifyToken(user._id);
 
   const link = `${appConfig.authServiceURL}/user/verify/${user.id}/${verifyToken.token}`;
-  let sendMail = await sendEmail(
+  let sendMail = false;
+  sendMail = await sendEmail(
     user.full_name,
     user.email,
     "Verify Email, " + user.full_name,
@@ -411,7 +412,8 @@ exports.forgetPassword = async (req, res, next) => {
   console.log(token);
   const link = `${appConfig.authServiceURL}/forget_password/${user._id}/${token.token}`;
 
-  let sendMail = await sendEmail(
+  let sendMail = false;
+  sendMail = await sendEmail(
     user.full_name,
     user.email,
     "Password reset, " + user.full_name,

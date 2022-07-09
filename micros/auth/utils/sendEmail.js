@@ -9,6 +9,7 @@ exports.sendEmail = async function (
   fileName,
   link
 ) {
+  let ok = true;
   try {
     const transporter = nodemailer.createTransport({
       host: appConfig.emailCenter,
@@ -26,6 +27,7 @@ exports.sendEmail = async function (
       function (err, html) {
         if (err) {
           console.log(err);
+          ok = false;
         } else {
           var mapObj = {
             "{{AppURL}}": appConfig.AppURL,
@@ -53,15 +55,15 @@ exports.sendEmail = async function (
           transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
               console.log(error);
-              return false;
+              ok = false;
             }
             console.log("Email Sending Information: " + info.response);
-            return true;
           });
         }
       }
     );
   } catch (error) {
-    return false;
+    return (ok = false);
   }
+  return ok;
 };
