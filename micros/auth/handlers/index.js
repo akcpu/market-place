@@ -115,15 +115,14 @@ exports.createUserandSendEmail = async (req, res, next) => {
   let verifyToken = await authService.createVerifyToken(user._id);
 
   const link = `${appConfig.authServiceURL}/user/verify/${user.id}/${verifyToken.token}`;
-  let sendMail = await sendEmail(
+  await sendEmail(
     user.full_name,
     user.email,
     "Verify Email, " + user.full_name,
     link,
     "email_code_verify-css",
     link
-  );
-  if (!sendMail) {
+  ).catch(() => {
     log.Error("Error happened in sending Email!");
     return next(
       new utils.ErrorHandler(
@@ -131,7 +130,8 @@ exports.createUserandSendEmail = async (req, res, next) => {
         "Error happened in sending email! - " + req.body.email
       )
     );
-  }
+  });
+
   var viewdata = {
     Message: "An Email sent to your account please verify.",
   };
@@ -179,7 +179,7 @@ exports.getLogIn = async (req, res) => {
     SignupLink: "/auth/signup",
     GithubLink: gitClientID,
     GoogleLink: "/auth/google",
-    Title: "signup",
+    Title: "Login",
     OrgAvatar: appConfig.OrgAvatar,
   };
   res.render("login", viewdata);
@@ -292,8 +292,8 @@ exports.profile = async (req, res) => {
 };
 
 exports.logOut = async (req, res) => {
-  res.clearCookie("refreshToken");
   res.clearCookie("token");
+  res.clearCookie("refreshToken");
   res.status(200).json({
     error: false,
     message: "User LogOut successfully",
@@ -338,25 +338,32 @@ exports.resetUserPassword = async (req, res, next) => {
         new utils.ErrorHandler("missingloginAuth", "Missing Authentication")
       );
     }
-    console.log("token: " + token);
-    const findUser = authService.changeUserPasswordByAccessToken(
-      token,
-      req.body.newPassword
-    );
-    if (!findUser) {
-      log.Error("ResetPassHandle: Find User Problem");
-      return next(
-        new utils.ErrorHandler("missingloginFind", "Missing Find User")
-      );
-    }
+    await authService
+      .changeUserPasswordByAccessToken(
+        req.body.oldPassword,
+        token,
+        req.body.newPassword
+      )
+      .then(() => {
+        res.clearCookie("token");
+        res.clearCookie("refreshToken");
 
-    res.clearCookie("token");
-    res.clearCookie("refreshToken");
-
-    var viewdata = {
-      Message: "change password sucessfully.",
-    };
-    res.render("message", viewdata);
+        var viewdata = {
+          Message: "change password sucessfully.",
+        };
+        res.render("message", viewdata);
+      })
+      .catch(() => {
+        res.clearCookie("token");
+        res.clearCookie("refreshToken");
+        log.Error("ResetPassHandle: Find User Problem");
+        return next(
+          new utils.ErrorHandler(
+            "missingResetPassword",
+            "Missing Reset Password"
+          )
+        );
+      });
   } catch (error) {
     console.log(error);
     res.send("An error occured");
@@ -411,7 +418,8 @@ exports.forgetPassword = async (req, res, next) => {
   console.log(token);
   const link = `${appConfig.authServiceURL}/forget_password/${user._id}/${token.token}`;
 
-  let sendMail = await sendEmail(
+  let sendMail = false;
+  sendMail = await sendEmail(
     user.full_name,
     user.email,
     "Password reset, " + user.full_name,

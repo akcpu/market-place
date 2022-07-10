@@ -26,6 +26,7 @@ exports.sendEmail = async function (
       function (err, html) {
         if (err) {
           console.log(err);
+          throw new Error();
         } else {
           var mapObj = {
             "{{AppURL}}": appConfig.AppURL,
@@ -52,16 +53,14 @@ exports.sendEmail = async function (
           };
           transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
-              console.log(error);
-              return false;
+              throw new Error("Problem in mailOptions sendMail");
             }
             console.log("Email Sending Information: " + info.response);
-            return true;
           });
         }
       }
     );
   } catch (error) {
-    return false;
+    throw new Error();
   }
 };
