@@ -6,6 +6,8 @@ const { User } = require("../models/user");
 const UserToken = require("../models/UserToken");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const hmac = require("../utils/hmac");
+
 exports.hashPassword = async function (plainTextPassword) {
   const salt = await bcrypt.genSalt(Number(appConfig.SALT));
   const hashPassword = bcrypt.hash(plainTextPassword, salt);
@@ -43,6 +45,30 @@ exports.recaptchaV3 = async function (response_key) {
 };
 
 exports.createUser = async function (reqfullName, reqEmail, hashPassword) {
+  const postData = {};
+  postData.id = "1";
+  postData.fullName = reqfullName;
+  postData.email = reqEmail;
+  postData.password = hashPassword;
+  postData.userName = reqEmail;
+  let gen_hmac = hmac.sign(JSON.stringify(postData), appConfig.HMAC_SECRET_KEY);
+  let axiosConfig = {
+    headers: {
+      "Content-Type": "application/json;charset=UTF-8",
+      "X-Cloud-Signature": `${gen_hmac.toString()}`,
+      "user-agent": "custom",
+    },
+  };
+  let result = await axios.post(
+    "http://localhost/users",
+    postData,
+    axiosConfig
+  );
+  let data = result.data || {};
+  if (!data.success) {
+    console.log(data);
+  }
+
   return await new User({
     fullName: reqfullName,
     email: reqEmail,

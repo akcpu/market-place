@@ -12,7 +12,7 @@ exports.setUser = function (ruser) {
     fullName: ruser.fullName,
     userName: ruser.userName,
     password: ruser.password,
-    email: ruser.email,
+    emailUser: ruser.email,
   });
   return newUser.save();
 };
