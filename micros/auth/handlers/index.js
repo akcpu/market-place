@@ -5,7 +5,7 @@ const axios = require("axios");
 const zxcvbn = require("zxcvbn");
 const bcrypt = require("bcrypt");
 var access_token = "";
-// const bcrypt = require("bcrypt");
+
 //Auth const
 const {
   signUpBodyValidation,
@@ -13,12 +13,12 @@ const {
 } = require("../utils/validationSchema");
 const generateTokens = require("../utils/generateTokens");
 
-// const User = require("../models/User");
 const { User, validate } = require("../models/user");
 const Joi = require("joi");
 
 const log = require("../utils/errorLogger");
 const utils = require("../utils/error-handler");
+const { HttpStatusCode } = require("../utils/HttpStatusCode");
 
 // Get SignUp Page
 exports.showSignUp = async (req, res) => {
@@ -35,33 +35,18 @@ exports.showSignUp = async (req, res) => {
 };
 
 // create user and send email
-exports.createUserandSendEmail = async (req, res, next) => {
-  const { full_name, email, newPassword } = req.body;
-
-  if (full_name == "") {
-    log.Error("SignupTokenHandle: missing fullname");
-    return next(new utils.ErrorHandler("missingFullname", "Missing fullname"));
-  }
-  if (email == "") {
-    log.Error("SignupTokenHandle: missing email");
-    return next(new utils.ErrorHandler("missingEmail", "Missing email"));
-  }
-  if (newPassword == "") {
-    log.Error("SignupTokenHandle: missing password");
-    return next(new utils.ErrorHandler("missingPassword", "Missing password"));
-  }
-  if (req.body["g-recaptcha-response"] == "") {
-    log.Error("SignupTokenHandle: missing recaptcha");
-    return next(
-      new utils.ErrorHandler("missingrecaptcha", "Missing recaptcha")
-    );
-  }
+exports.createUserandSendEmail = async (req, res) => {
   const { error } = validate(req.body);
   if (error) {
     log.Error("SignupTokenHandle: missing validation");
-    return next(
-      new utils.ErrorHandler("missingvalidation", "Missing validation")
-    );
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "auth.missingvalidation",
+          "Missing validation"
+        ).json()
+      );
   }
   const passStrength = await zxcvbn(req.body.newPassword);
   log.Error(
@@ -71,44 +56,52 @@ exports.createUserandSendEmail = async (req, res, next) => {
     log.Error(
       ` *** WARNING *** - User With Email: ${req.body.email} Password Strength is: ${passStrength.guesses}`
     );
-    return next(
-      new utils.ErrorHandler(
-        "needStrongerPassword",
-        "Password is not strong enough!"
-      )
-    );
+
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "needStrongerPassword",
+          "Password is not strong enough!"
+        ).json()
+      );
   }
+
   // Verify Captha
   let recaptchaV3 = await authService.recaptchaV3(
     req.body["g-recaptcha-response"]
   );
   if (!recaptchaV3.success || !recaptchaV3) {
     log.Error("Error happened in validating recaptcha!");
-    return next(
-      new utils.ErrorHandler(
-        "internal/recaptcha",
-        "Error happened in verifying captcha!"
-      )
-    );
+    return res
+      .status(HttpStatusCode.InternalServerError)
+      .send(
+        new utils.ErrorHandler(
+          "internal/recaptcha",
+          "Error happened in verifying captcha!"
+        ).json()
+      );
   }
 
   // Check user exist
   let user = await authService.getUserDataByEmail(req.body.email);
 
   if (user) {
-    log.Error("User already exist by email : %s", user);
-    return next(
-      new utils.ErrorHandler(
-        "userAlreadyExist",
-        "User already exist - " + req.body.email
-      )
-    );
+    log.Error("User already exist by email : " + user);
+    return res
+      .status(HttpStatusCode.Conflict)
+      .send(
+        new utils.ErrorHandler(
+          "userAlreadyExist",
+          "User already exist - " + req.body.email
+        ).json()
+      );
   }
   const salt = await bcrypt.genSalt(Number(appConfig.SALT));
   const hashPassword = await bcrypt.hash(req.body.newPassword, salt);
 
   user = await authService.createUser(
-    req.body.full_name,
+    req.body.fullName,
     req.body.email,
     hashPassword
   );
@@ -116,20 +109,22 @@ exports.createUserandSendEmail = async (req, res, next) => {
 
   const link = `${appConfig.authServiceURL}/user/verify/${user.id}/${verifyToken.token}`;
   await sendEmail(
-    user.full_name,
+    user.fullName,
     user.email,
-    "Verify Email, " + user.full_name,
+    "Verify Email, " + user.fullName,
     link,
     "email_code_verify-css",
     link
   ).catch(() => {
     log.Error("Error happened in sending Email!");
-    return next(
-      new utils.ErrorHandler(
-        "internal/sendEmailAuth",
-        "Error happened in sending email! - " + req.body.email
-      )
-    );
+    return res
+      .status(HttpStatusCode.InternalServerError)
+      .send(
+        new utils.ErrorHandler(
+          "internal/sendEmailAuth",
+          "Error happened in sending email! - " + req.body.email
+        ).json()
+      );
   });
 
   var viewdata = {
@@ -139,21 +134,31 @@ exports.createUserandSendEmail = async (req, res, next) => {
 };
 
 // verify link sent by email
-exports.verifyEmailLink = async (req, res, next) => {
+exports.verifyEmailLink = async (req, res) => {
   const user = await authService.checkUserExistById(req.params.id);
   if (!user) {
-    log.Error("verifyEmailHandle: user exist missing");
-    return next(
-      new utils.ErrorHandler("userverifactionmissing", "User exist missing")
-    );
+    log.Error("verifyEmailHandle: Error happened in show verify Email Link!");
+    return res
+      .status(HttpStatusCode.Unauthorized)
+      .send(
+        new utils.ErrorHandler(
+          "auth.userverifactionmissing",
+          "User exist missing"
+        ).json()
+      );
   }
 
   const token = await authService.checkTokenExist(user._id, req.params.token);
   if (!token) {
-    log.Error("verifyEmailHandle: token exist missing");
-    return next(
-      new utils.ErrorHandler("tokenverifactionmissing", "Token exist missing")
-    );
+    log.Error("verifyEmailHandle: Error happened in check token exist");
+    return res
+      .status(HttpStatusCode.Unauthorized)
+      .send(
+        new utils.ErrorHandler(
+          "auth.tokenverifactionmissing",
+          "Token exist missing"
+        ).json()
+      );
   }
 
   await authService.updateVerifyUser(user._id, true);
@@ -186,35 +191,42 @@ exports.getLogIn = async (req, res) => {
 };
 
 // POST login
-exports.logIn = async (req, res, next) => {
-  if (req.body.username == "") {
-    log.Error("LoginHandle: missing username");
-    return next(new utils.ErrorHandler("missingUsername", "Missing username"));
-  }
-  if (req.body.password == "") {
-    log.Error("LoginHandle: missing password");
-    return next(new utils.ErrorHandler("missingPassword", "Missing password"));
-  }
+exports.logIn = async (req, res) => {
   const { error } = logInBodyValidation(req.body);
   if (error) {
     log.Error("LoginHandle: missing validation");
-    return next(
-      new utils.ErrorHandler("loginmissingvalidation", "Missing validation")
-    );
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "auth.loginmissingvalidation",
+          "Missing validation"
+        ).json()
+      );
   }
   const user = await authService.getUserDataByEmail(req.body.username);
   if (!user) {
     log.Error("LoginHandle: Invalid email or password");
-    return next(
-      new utils.ErrorHandler("loginInvalid", "Invalid email or password")
-    );
+    return res
+      .status(HttpStatusCode.Unauthorized)
+      .send(
+        new utils.ErrorHandler(
+          "auth.loginInvalid",
+          "Invalid email or password"
+        ).json()
+      );
   }
   const checkUserVerify = await authService.checkUserVerify(req.body.username);
   if (!checkUserVerify) {
     log.Error("LoginHandle: Unverified email");
-    return next(
-      new utils.ErrorHandler("loginunverifiedemail", "Unverified email")
-    );
+    return res
+      .status(HttpStatusCode.Unauthorized)
+      .send(
+        new utils.ErrorHandler(
+          "auth.loginunverifiedemail",
+          "Unverified email"
+        ).json()
+      );
   }
   const checkPasswordVerify = await authService.checkPasswordVerify(
     req.body.password,
@@ -223,9 +235,14 @@ exports.logIn = async (req, res, next) => {
 
   if (!checkPasswordVerify) {
     log.Error("LoginHandle: Invalid email or password");
-    return next(
-      new utils.ErrorHandler("loginInvalid", "Invalid email or password")
-    );
+    return res
+      .status(HttpStatusCode.Unauthorized)
+      .send(
+        new utils.ErrorHandler(
+          "auth.loginInvalid",
+          "Invalid email or password"
+        ).json()
+      );
   }
 
   // If you request a user login with a user role,
@@ -252,16 +269,16 @@ exports.profile = async (req, res) => {
     return res.status(401).end();
   }
 
-  const { _id, full_name, email, password, verified, roles } = findUser;
+  const { _id, fullName, email, password, verified, roles } = findUser;
   res.status(200).json({
     error: false,
     message:
       "username: " +
-      full_name +
+      fullName +
       "_id: " +
       _id +
-      "full_name: " +
-      full_name +
+      "full name: " +
+      fullName +
       "email: " +
       email +
       "password: " +
@@ -276,7 +293,7 @@ exports.profile = async (req, res) => {
   // const hashPassword = await bcrypt.hash("123456789", salt);
 
   // const doc = await User.findById(decode._id);
-  // doc.full_name = "reza";
+  // doc.fullName = "reza";
   // doc.password = hashPassword;
   // await doc.save();
 
@@ -284,7 +301,7 @@ exports.profile = async (req, res) => {
   //   error: false,
   //   message:
   //     "username: " +
-  //     doc.full_name +
+  //     doc.fullName +
   //     "password: " +
   //     doc.password +
   //     "Change successfully",
@@ -301,20 +318,30 @@ exports.logOut = async (req, res) => {
 };
 
 // Get Change password Page
-exports.getResetUserPassword = async (req, res, next) => {
+exports.getResetUserPassword = async (req, res) => {
   const token = req.cookies.token;
   if (!token) {
     log.Error("ResetPassHandle: Authentication Problem");
-    return next(
-      new utils.ErrorHandler("missingloginAuth", "Missing Authentication")
-    );
+    return res
+      .status(HttpStatusCode.Unauthorized)
+      .send(
+        new utils.ErrorHandler(
+          "auth.missingloginAuth",
+          "Missing Authentication"
+        ).json()
+      );
   }
   const findUser = await authService.findUserByAccessToken(token);
   if (!findUser) {
     log.Error("ResetPassHandle: Find User Problem");
-    return next(
-      new utils.ErrorHandler("missingloginFind", "Missing Find User")
-    );
+    return res
+      .status(HttpStatusCode.InternalServerError)
+      .send(
+        new utils.ErrorHandler(
+          "auth.missingloginFind",
+          "Missing Find User"
+        ).json()
+      );
   }
 
   var viewdata = {
@@ -329,14 +356,19 @@ exports.getResetUserPassword = async (req, res, next) => {
 };
 
 // Change User password
-exports.resetUserPassword = async (req, res, next) => {
+exports.resetUserPassword = async (req, res) => {
   try {
     const token = req.cookies.token;
     if (!token) {
       log.Error("ResetPassHandle: Authentication Problem");
-      return next(
-        new utils.ErrorHandler("missingloginAuth", "Missing Authentication")
-      );
+      return res
+        .status(HttpStatusCode.Unauthorized)
+        .send(
+          new utils.ErrorHandler(
+            "auth.missingloginAuth",
+            "Missing Authentication"
+          ).json()
+        );
     }
     await authService
       .changeUserPasswordByAccessToken(
@@ -357,12 +389,14 @@ exports.resetUserPassword = async (req, res, next) => {
         res.clearCookie("token");
         res.clearCookie("refreshToken");
         log.Error("ResetPassHandle: Find User Problem");
-        return next(
-          new utils.ErrorHandler(
-            "missingResetPassword",
-            "Missing Reset Password"
-          )
-        );
+        return res
+          .status(HttpStatusCode.Unauthorized)
+          .send(
+            new utils.ErrorHandler(
+              "missingResetPassword",
+              "Missing Reset Password"
+            ).json()
+          );
       });
   } catch (error) {
     console.log(error);
@@ -384,33 +418,41 @@ exports.getForgetPasswordPage = async (req, res) => {
 };
 
 // Send reset password link
-exports.forgetPassword = async (req, res, next) => {
+exports.forgetPassword = async (req, res) => {
   if (req.body.email == "") {
     log.Error("ForgetPassHandle: email field is empty");
-    return next(new utils.ErrorHandler("missingEmail", "Missing Email"));
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler("auth.missingEmail", "Missing Email").json()
+      );
   }
 
   const schema = Joi.object({ email: Joi.string().email().required() });
   const { error } = schema.validate(req.body);
   if (error) {
     log.Error("ForgetPassHandle: email field is empty");
-    return next(
-      new utils.ErrorHandler(
-        "forgetpassmissingvalidation",
-        "Missing validation"
-      )
-    );
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "forgetpassmissingvalidation",
+          "Missing validation"
+        ).json()
+      );
   }
 
   const user = await authService.getUserDataByEmail(req.body.email);
   if (user) {
     log.Error("ForgetPassHandle : User already exist by email : %s", user);
-    return next(
-      new utils.ErrorHandler(
-        "forgetAlreadyExist",
-        "User already exist - " + req.body.email
-      )
-    );
+    return res
+      .status(HttpStatusCode.Conflict)
+      .send(
+        new utils.ErrorHandler(
+          "forgetAlreadyExist",
+          "User already exist - " + req.body.email
+        ).json()
+      );
   }
 
   let token = await authService.getTokenByUserId(user._id);
@@ -420,21 +462,23 @@ exports.forgetPassword = async (req, res, next) => {
 
   let sendMail = false;
   sendMail = await sendEmail(
-    user.full_name,
+    user.fullName,
     user.email,
-    "Password reset, " + user.full_name,
+    "Password reset, " + user.fullName,
     link,
     "email_link_verify_reset_pass-css",
     link
   );
   if (!sendMail) {
     log.Error("Error happened in sending Email!");
-    return next(
-      new utils.ErrorHandler(
-        "internal/sendEmailAuth",
-        "Error happened in sending email! - " + req.body.email
-      )
-    );
+    return res
+      .status(HttpStatusCode.InternalServerError)
+      .send(
+        new utils.ErrorHandler(
+          "internal/sendEmailAuth",
+          "Error happened in sending email! - " + req.body.email
+        ).json()
+      );
   }
   var viewdata = {
     Message: "password reset link sent to your email account",
@@ -443,31 +487,42 @@ exports.forgetPassword = async (req, res, next) => {
 };
 
 // Forget password
-exports.getForgetPassword = async (req, res, next) => {
+exports.getForgetPassword = async (req, res) => {
   let reqUserId = req.params.userId;
   let reqToken = req.params.token;
   if (!reqUserId || !reqToken) {
     log.Error("ForgetPassHandle: Input Value Problem");
-    return next(new utils.ErrorHandler("missinginput", "Missing Value"));
+    return res
+      .status(HttpStatusCode.Unauthorized)
+      .send(
+        new utils.ErrorHandler("auth.missinginput", "Missing Value").json()
+      );
   }
 
   const user = await authService.findUserById(reqUserId);
   if (!user) {
     log.Error("ForgetPassHandle: find user Problem");
-    return next(
-      new utils.ErrorHandler(
-        "missingforgetfinduser",
-        "Missing find forget user"
-      )
-    );
+    return res
+      .status(HttpStatusCode.InternalServerError)
+      .send(
+        new utils.ErrorHandler(
+          "missingforgetfinduser",
+          "Missing find forget user"
+        ).json()
+      );
   }
 
   const token = await authService.checkTokenExist(user._id, reqToken);
   if (!token) {
     log.Error("ForgetPassHandle: user Token Problem");
-    return next(
-      new utils.ErrorHandler("missingforgettoken", "Missing Token forget user")
-    );
+    return res
+      .status(HttpStatusCode.InternalServerError)
+      .send(
+        new utils.ErrorHandler(
+          "auth.missingforgettoken",
+          "Missing Token forget user"
+        ).json()
+      );
   }
 
   await authService.findByIdAndRemoveToken(token._id);
@@ -485,7 +540,7 @@ exports.getForgetPassword = async (req, res, next) => {
 };
 
 // Declare the callback github route
-exports.gitCallback = (req, res, next) => {
+exports.gitCallback = (req, res) => {
   // The req.query object has the query params that were sent to this route.
   const requestToken = req.query.code;
   axios({
@@ -502,14 +557,19 @@ exports.gitCallback = (req, res, next) => {
     })
     .catch((err) => {
       log.Error(`GithubHandle: callback Problem ${err}`);
-      return next(
-        new utils.ErrorHandler("missinggitCallback", "Missing Callback Github")
-      );
+      return res
+        .status(HttpStatusCode.Unauthorized)
+        .send(
+          new utils.ErrorHandler(
+            "auth.missinggitCallback",
+            "Missing Callback Github"
+          ).json()
+        );
     });
 };
 
 // Github Authorization Successfully
-exports.gitSuccess = (req, res, next) => {
+exports.gitSuccess = (req, res) => {
   axios({
     method: "get",
     url: "https://api.github.com/user",
@@ -523,9 +583,14 @@ exports.gitSuccess = (req, res, next) => {
     })
     .catch((err) => {
       log.Error(`GithubHandle: response Github Authorization Problem ${err}`);
-      return next(
-        new utils.ErrorHandler("missinggitAuth", "Missing Authorization Github")
-      );
+      return res
+        .status(HttpStatusCode.Unauthorized)
+        .send(
+          new utils.ErrorHandler(
+            "auth.missinggitAuth",
+            "Missing Authorization Github"
+          ).json()
+        );
     });
 };
 

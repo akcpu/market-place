@@ -5,5 +5,13 @@ class ErrorHandler extends Error {
     this.message = message;
     Error.captureStackTrace(this, this.constructor);
   }
+  json() {
+    return {
+      error: {
+        code: this.code,
+        message: this.message,
+      },
+    };
+  }
 }
 module.exports = { ErrorHandler };

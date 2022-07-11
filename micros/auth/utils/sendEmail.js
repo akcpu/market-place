@@ -1,15 +1,8 @@
 const nodemailer = require("nodemailer");
 const { appConfig } = require("../config");
 const fs = require("node:fs");
-exports.sendEmail = async function (
-  userName,
-  email,
-  subject,
-  text,
-  fileName,
-  link
-) {
-  try {
+exports.sendEmail = function (userName, email, subject, text, fileName, link) {
+  return new Promise((resolve, reject) => {
     const transporter = nodemailer.createTransport({
       host: appConfig.emailCenter,
       port: appConfig.emailPort,
@@ -26,7 +19,7 @@ exports.sendEmail = async function (
       function (err, html) {
         if (err) {
           console.log(err);
-          throw new Error();
+          reject(err);
         } else {
           var mapObj = {
             "{{AppURL}}": appConfig.AppURL,
@@ -53,14 +46,13 @@ exports.sendEmail = async function (
           };
           transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
-              throw new Error("Problem in mailOptions sendMail");
+              reject(new Error("Problem in mailOptions sendMail"));
             }
+            resolve(info.response);
             console.log("Email Sending Information: " + info.response);
           });
         }
       }
     );
-  } catch (error) {
-    throw new Error();
-  }
+  });
 };

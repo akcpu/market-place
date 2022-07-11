@@ -6,8 +6,8 @@ const { User } = require("../models/user");
 const UserToken = require("../models/UserToken");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-exports.hashPassword = function (plainTextPassword) {
-  const salt = bcrypt.genSalt(Number(appConfig.SALT));
+exports.hashPassword = async function (plainTextPassword) {
+  const salt = await bcrypt.genSalt(Number(appConfig.SALT));
   const hashPassword = bcrypt.hash(plainTextPassword, salt);
   console.log(hashPassword);
 
@@ -44,7 +44,7 @@ exports.recaptchaV3 = async function (response_key) {
 
 exports.createUser = async function (reqfullName, reqEmail, hashPassword) {
   return await new User({
-    full_name: reqfullName,
+    fullName: reqfullName,
     email: reqEmail,
     password: hashPassword,
   }).save();
