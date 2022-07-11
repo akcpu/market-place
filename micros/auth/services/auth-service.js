@@ -44,7 +44,7 @@ exports.recaptchaV3 = async function (response_key) {
 
 exports.createUser = async function (reqfullName, reqEmail, hashPassword) {
   return await new User({
-    full_name: reqfullName,
+    fullName: reqfullName,
     email: reqEmail,
     password: hashPassword,
   }).save();

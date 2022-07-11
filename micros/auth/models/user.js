@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 const Joi = require("joi");
 
 const UsersSchema = new Schema({
-  full_name: { type: String, default: null },
+  fullName: { type: String, default: null },
   email: { type: String, required: true, trim: true, unique: true },
   password: { type: String, required: true },
   verified: { type: Boolean, default: false },
@@ -18,11 +18,11 @@ const User = mongoose.model("User", UsersSchema);
 
 const validate = (user) => {
   const schema = Joi.object({
-    full_name: Joi.string(),
+    fullName: Joi.string(),
     email: Joi.string().email().required(),
-    newPassword: Joi.string().required(), // you can set .min(5).max(15)
+    newPassword: Joi.string().required().min(5), // you can set .max(15)
     confirmPassword: Joi.any().valid(Joi.ref("newPassword")).required(),
-    "g-recaptcha-response": Joi.string(),
+    "g-recaptcha-response": Joi.string().required(),
     verified: Joi.boolean().default(false),
     roles: Joi.string().default("user"),
   });

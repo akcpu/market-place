@@ -3,7 +3,7 @@ const passwordComplexity = require("joi-password-complexity");
 
 exports.signUpBodyValidation = (body) => {
   const schema = Joi.object({
-    full_name: Joi.string().required().label("Full Name"),
+    fullName: Joi.string().required().label("Full Name"),
     email: Joi.string().email().required().label("Email"),
     password: passwordComplexity().required().label("Password"),
   });
