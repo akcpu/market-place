@@ -19,6 +19,7 @@ const Joi = require("joi");
 
 const log = require("../utils/errorLogger");
 const utils = require("../utils/error-handler");
+const { HttpStatusCode } = require("../utils/HttpStatusCode");
 
 // Get SignUp Page
 exports.showSignUp = async (req, res) => {
@@ -35,33 +36,61 @@ exports.showSignUp = async (req, res) => {
 };
 
 // create user and send email
-exports.createUserandSendEmail = async (req, res, next) => {
+exports.createUserandSendEmail = async (req, res) => {
   const { full_name, email, newPassword } = req.body;
 
   if (full_name == "") {
     log.Error("SignupTokenHandle: missing fullname");
-    return next(new utils.ErrorHandler("missingFullname", "Missing fullname"));
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "auth.missingFullname",
+          "Missing fullname"
+        ).json()
+      );
   }
   if (email == "") {
     log.Error("SignupTokenHandle: missing email");
-    return next(new utils.ErrorHandler("missingEmail", "Missing email"));
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler("auth.missingEmail", "Missing email").json()
+      );
   }
   if (newPassword == "") {
     log.Error("SignupTokenHandle: missing password");
-    return next(new utils.ErrorHandler("missingPassword", "Missing password"));
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "auth.missingPassword",
+          "Missing password"
+        ).json()
+      );
   }
   if (req.body["g-recaptcha-response"] == "") {
     log.Error("SignupTokenHandle: missing recaptcha");
-    return next(
-      new utils.ErrorHandler("missingrecaptcha", "Missing recaptcha")
-    );
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "auth.missingrecaptcha",
+          "Missing recaptcha"
+        ).json()
+      );
   }
   const { error } = validate(req.body);
   if (error) {
     log.Error("SignupTokenHandle: missing validation");
-    return next(
-      new utils.ErrorHandler("missingvalidation", "Missing validation")
-    );
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "auth.missingvalidation",
+          "Missing validation"
+        ).json()
+      );
   }
   const passStrength = await zxcvbn(req.body.newPassword);
   log.Error(
@@ -71,25 +100,31 @@ exports.createUserandSendEmail = async (req, res, next) => {
     log.Error(
       ` *** WARNING *** - User With Email: ${req.body.email} Password Strength is: ${passStrength.guesses}`
     );
-    return next(
-      new utils.ErrorHandler(
-        "needStrongerPassword",
-        "Password is not strong enough!"
-      )
-    );
+
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "needStrongerPassword",
+          "Password is not strong enough!"
+        ).json()
+      );
   }
+
   // Verify Captha
   let recaptchaV3 = await authService.recaptchaV3(
     req.body["g-recaptcha-response"]
   );
   if (!recaptchaV3.success || !recaptchaV3) {
     log.Error("Error happened in validating recaptcha!");
-    return next(
-      new utils.ErrorHandler(
-        "internal/recaptcha",
-        "Error happened in verifying captcha!"
-      )
-    );
+    return res
+      .status(HttpStatusCode.InternalServerError)
+      .send(
+        new utils.ErrorHandler(
+          "internal/recaptcha",
+          "Error happened in verifying captcha!"
+        ).json()
+      );
   }
 
   // Check user exist
@@ -97,12 +132,14 @@ exports.createUserandSendEmail = async (req, res, next) => {
 
   if (user) {
     log.Error("User already exist by email : %s", user);
-    return next(
-      new utils.ErrorHandler(
-        "userAlreadyExist",
-        "User already exist - " + req.body.email
-      )
-    );
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "userAlreadyExist",
+          "User already exist - " + req.body.email
+        ).json()
+      );
   }
   const salt = await bcrypt.genSalt(Number(appConfig.SALT));
   const hashPassword = await bcrypt.hash(req.body.newPassword, salt);
@@ -124,12 +161,14 @@ exports.createUserandSendEmail = async (req, res, next) => {
     link
   ).catch(() => {
     log.Error("Error happened in sending Email!");
-    return next(
-      new utils.ErrorHandler(
-        "internal/sendEmailAuth",
-        "Error happened in sending email! - " + req.body.email
-      )
-    );
+    return res
+      .status(HttpStatusCode.InternalServerError)
+      .send(
+        new utils.ErrorHandler(
+          "internal/sendEmailAuth",
+          "Error happened in sending email! - " + req.body.email
+        ).json()
+      );
   });
 
   var viewdata = {
@@ -144,7 +183,10 @@ exports.verifyEmailLink = async (req, res, next) => {
   if (!user) {
     log.Error("verifyEmailHandle: user exist missing");
     return next(
-      new utils.ErrorHandler("userverifactionmissing", "User exist missing")
+      new utils.ErrorHandler(
+        "auth.userverifactionmissing",
+        "User exist missing"
+      )
     );
   }
 
@@ -152,7 +194,10 @@ exports.verifyEmailLink = async (req, res, next) => {
   if (!token) {
     log.Error("verifyEmailHandle: token exist missing");
     return next(
-      new utils.ErrorHandler("tokenverifactionmissing", "Token exist missing")
+      new utils.ErrorHandler(
+        "auth.tokenverifactionmissing",
+        "Token exist missing"
+      )
     );
   }
 
@@ -189,31 +234,38 @@ exports.getLogIn = async (req, res) => {
 exports.logIn = async (req, res, next) => {
   if (req.body.username == "") {
     log.Error("LoginHandle: missing username");
-    return next(new utils.ErrorHandler("missingUsername", "Missing username"));
+    return next(
+      new utils.ErrorHandler("auth.missingUsername", "Missing username")
+    );
   }
   if (req.body.password == "") {
     log.Error("LoginHandle: missing password");
-    return next(new utils.ErrorHandler("missingPassword", "Missing password"));
+    return next(
+      new utils.ErrorHandler("auth.missingPassword", "Missing password")
+    );
   }
   const { error } = logInBodyValidation(req.body);
   if (error) {
     log.Error("LoginHandle: missing validation");
     return next(
-      new utils.ErrorHandler("loginmissingvalidation", "Missing validation")
+      new utils.ErrorHandler(
+        "auth.loginmissingvalidation",
+        "Missing validation"
+      )
     );
   }
   const user = await authService.getUserDataByEmail(req.body.username);
   if (!user) {
     log.Error("LoginHandle: Invalid email or password");
     return next(
-      new utils.ErrorHandler("loginInvalid", "Invalid email or password")
+      new utils.ErrorHandler("auth.loginInvalid", "Invalid email or password")
     );
   }
   const checkUserVerify = await authService.checkUserVerify(req.body.username);
   if (!checkUserVerify) {
     log.Error("LoginHandle: Unverified email");
     return next(
-      new utils.ErrorHandler("loginunverifiedemail", "Unverified email")
+      new utils.ErrorHandler("auth.loginunverifiedemail", "Unverified email")
     );
   }
   const checkPasswordVerify = await authService.checkPasswordVerify(
@@ -224,7 +276,7 @@ exports.logIn = async (req, res, next) => {
   if (!checkPasswordVerify) {
     log.Error("LoginHandle: Invalid email or password");
     return next(
-      new utils.ErrorHandler("loginInvalid", "Invalid email or password")
+      new utils.ErrorHandler("auth.loginInvalid", "Invalid email or password")
     );
   }
 
@@ -306,14 +358,14 @@ exports.getResetUserPassword = async (req, res, next) => {
   if (!token) {
     log.Error("ResetPassHandle: Authentication Problem");
     return next(
-      new utils.ErrorHandler("missingloginAuth", "Missing Authentication")
+      new utils.ErrorHandler("auth.missingloginAuth", "Missing Authentication")
     );
   }
   const findUser = await authService.findUserByAccessToken(token);
   if (!findUser) {
     log.Error("ResetPassHandle: Find User Problem");
     return next(
-      new utils.ErrorHandler("missingloginFind", "Missing Find User")
+      new utils.ErrorHandler("auth.missingloginFind", "Missing Find User")
     );
   }
 
@@ -335,7 +387,10 @@ exports.resetUserPassword = async (req, res, next) => {
     if (!token) {
       log.Error("ResetPassHandle: Authentication Problem");
       return next(
-        new utils.ErrorHandler("missingloginAuth", "Missing Authentication")
+        new utils.ErrorHandler(
+          "auth.missingloginAuth",
+          "Missing Authentication"
+        )
       );
     }
     await authService
@@ -387,7 +442,7 @@ exports.getForgetPasswordPage = async (req, res) => {
 exports.forgetPassword = async (req, res, next) => {
   if (req.body.email == "") {
     log.Error("ForgetPassHandle: email field is empty");
-    return next(new utils.ErrorHandler("missingEmail", "Missing Email"));
+    return next(new utils.ErrorHandler("auth.missingEmail", "Missing Email"));
   }
 
   const schema = Joi.object({ email: Joi.string().email().required() });
@@ -448,7 +503,7 @@ exports.getForgetPassword = async (req, res, next) => {
   let reqToken = req.params.token;
   if (!reqUserId || !reqToken) {
     log.Error("ForgetPassHandle: Input Value Problem");
-    return next(new utils.ErrorHandler("missinginput", "Missing Value"));
+    return next(new utils.ErrorHandler("auth.missinginput", "Missing Value"));
   }
 
   const user = await authService.findUserById(reqUserId);
@@ -466,7 +521,10 @@ exports.getForgetPassword = async (req, res, next) => {
   if (!token) {
     log.Error("ForgetPassHandle: user Token Problem");
     return next(
-      new utils.ErrorHandler("missingforgettoken", "Missing Token forget user")
+      new utils.ErrorHandler(
+        "auth.missingforgettoken",
+        "Missing Token forget user"
+      )
     );
   }
 
@@ -503,7 +561,10 @@ exports.gitCallback = (req, res, next) => {
     .catch((err) => {
       log.Error(`GithubHandle: callback Problem ${err}`);
       return next(
-        new utils.ErrorHandler("missinggitCallback", "Missing Callback Github")
+        new utils.ErrorHandler(
+          "auth.missinggitCallback",
+          "Missing Callback Github"
+        )
       );
     });
 };
@@ -524,7 +585,10 @@ exports.gitSuccess = (req, res, next) => {
     .catch((err) => {
       log.Error(`GithubHandle: response Github Authorization Problem ${err}`);
       return next(
-        new utils.ErrorHandler("missinggitAuth", "Missing Authorization Github")
+        new utils.ErrorHandler(
+          "auth.missinggitAuth",
+          "Missing Authorization Github"
+        )
       );
     });
 };
