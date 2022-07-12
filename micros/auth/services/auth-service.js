@@ -80,12 +80,10 @@ exports.callAPIWithHMAC = async (method, url, json, userInfo) => {
   axiosConfig.headers[appConfig.HMAC_HEADER_NAME] = `${hashData.toString()}`;
   await axios
     .post("http://localhost/users", json, axiosConfig)
-    .then((dataqqq) => {
-      console.log(dataqqq);
+    .then((data) => {
+      console.info(data);
     })
-    .catch(function (error) {
-      console.log(error);
-    });
+    .catch();
 };
 
 exports.checkTokenExist = async function (reqUserId, ReqToken) {
