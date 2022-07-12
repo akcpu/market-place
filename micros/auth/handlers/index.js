@@ -61,7 +61,7 @@ exports.createUserandSendEmail = async (req, res) => {
       .status(HttpStatusCode.BadRequest)
       .send(
         new utils.ErrorHandler(
-          "needStrongerPassword",
+          "auth.needStrongerPassword",
           "Password is not strong enough!"
         ).json()
       );
@@ -92,26 +92,46 @@ exports.createUserandSendEmail = async (req, res) => {
       .status(HttpStatusCode.Conflict)
       .send(
         new utils.ErrorHandler(
-          "userAlreadyExist",
+          "auth.userAlreadyExist",
           "User already exist - " + req.body.email
         ).json()
       );
   }
   const salt = await bcrypt.genSalt(Number(appConfig.SALT));
   const hashPassword = await bcrypt.hash(req.body.newPassword, salt);
-
-  user = await authService.createUser(
+  let userData = await authService.createUser(
     req.body.fullName,
     req.body.email,
     hashPassword
   );
-  let verifyToken = await authService.createVerifyToken(user._id);
 
-  const link = `${appConfig.authServiceURL}/user/verify/${user.id}/${verifyToken.token}`;
+  if (!userData) {
+    log.Error("Error happened in creating User Information");
+    return res
+      .status(HttpStatusCode.InternalServerError)
+      .send(
+        new utils.ErrorHandler(
+          "auth.createUser",
+          "Error happened in creating User Information! - " + req.url
+        ).json()
+      );
+  }
+  const postData = {};
+  postData.id = userData.id;
+  postData.fullName = userData.fullName;
+  postData.email = userData.email;
+  postData.password = hashPassword;
+  postData.userName = userData.email;
+
+  authService.callAPIWithHMAC("POST", req.url, postData, userData);
+
+  let verifyToken = await authService.createVerifyToken(userData.id);
+
+  const link = `${appConfig.authServiceURL}/user/verify/${userData.id}/${verifyToken.token}`;
   await sendEmail(
-    user.fullName,
-    user.email,
-    "Verify Email, " + user.fullName,
+    userData.fullName,
+    userData.email,
+    "Verify Email, " + userData.fullName,
     link,
     "email_code_verify-css",
     link

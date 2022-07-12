@@ -1,12 +1,12 @@
 const bcrypt = require("bcrypt");
 const { appConfig } = require("../config");
-const axios = require("axios");
+const axios = require("axios").default;
 const { User } = require("../models/user");
 //Token const
 const UserToken = require("../models/UserToken");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const hmac = require("../utils/hmac");
+const GateKeeper = require("../utils/hmac");
 
 exports.hashPassword = async function (plainTextPassword) {
   const salt = await bcrypt.genSalt(Number(appConfig.SALT));
@@ -45,30 +45,6 @@ exports.recaptchaV3 = async function (response_key) {
 };
 
 exports.createUser = async function (reqfullName, reqEmail, hashPassword) {
-  const postData = {};
-  postData.id = "1";
-  postData.fullName = reqfullName;
-  postData.email = reqEmail;
-  postData.password = hashPassword;
-  postData.userName = reqEmail;
-  let gen_hmac = hmac.sign(JSON.stringify(postData), appConfig.HMAC_SECRET_KEY);
-  let axiosConfig = {
-    headers: {
-      "Content-Type": "application/json;charset=UTF-8",
-      "X-Cloud-Signature": `${gen_hmac.toString()}`,
-      "user-agent": "custom",
-    },
-  };
-  let result = await axios.post(
-    "http://localhost/users",
-    postData,
-    axiosConfig
-  );
-  let data = result.data || {};
-  if (!data.success) {
-    console.log(data);
-  }
-
   return await new User({
     fullName: reqfullName,
     email: reqEmail,
@@ -81,6 +57,35 @@ exports.createVerifyToken = async function (reqUserId) {
     userId: reqUserId,
     token: crypto.randomBytes(32).toString("hex"),
   }).save();
+};
+
+exports.callAPIWithHMAC = async (method, url, json, userInfo) => {
+  const hashData = GateKeeper.sign(
+    JSON.stringify(json),
+    appConfig.HMAC_SECRET_KEY
+  );
+  console.log(
+    "[INFO][HTTP CALL] callAPIWithHMAC: ",
+    "Method: " + method,
+    "URL: " + url,
+    "Payload: " + JSON.stringify(json),
+    "User Info: " + userInfo
+  );
+  let axiosConfig = {
+    headers: {
+      "Content-Type": "application/json;charset=UTF-8",
+      "user-agent": "authToUsers",
+    },
+  };
+  axiosConfig.headers[appConfig.HMAC_HEADER_NAME] = `${hashData.toString()}`;
+  await axios
+    .post("http://localhost/users", json, axiosConfig)
+    .then((dataqqq) => {
+      console.log(dataqqq);
+    })
+    .catch(function (error) {
+      console.log(error);
+    });
 };
 
 exports.checkTokenExist = async function (reqUserId, ReqToken) {

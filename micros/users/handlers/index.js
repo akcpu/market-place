@@ -32,14 +32,16 @@ exports.getUserById = function (req, res) {
 
 // POST /users
 exports.setUser = function (req, res) {
-  let hash = req.header("X-Cloud-Signature");
+  let hash = req.header(appConfig.HMAC_HEADER_NAME);
   hmac
     .validate(JSON.stringify(req.body), appConfig.HMAC_SECRET_KEY, hash)
     .then(() => {
       if (validate_setData(req.body)) {
+        console.log("validate_setData");
         userService.setUser(req.body);
         res.send("User has been added successfully");
       } else {
+        console.log("validate_setDataerrors");
         console.log(validate_setData.errors);
         res.status(404).json({
           msg: "No user found" + JSON.stringify(validate_setData.errors),
@@ -47,6 +49,6 @@ exports.setUser = function (req, res) {
       }
     })
     .catch((err) => {
-      return res.send("error: " + err);
+      return res.send("error000: " + err);
     });
 };
