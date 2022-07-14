@@ -1,11 +1,13 @@
 const bcrypt = require("bcrypt");
 const { appConfig } = require("../config");
-const axios = require("axios");
+const axios = require("axios").default;
 const { User } = require("../models/user");
 //Token const
 const UserToken = require("../models/UserToken");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const GateKeeper = require("../utils/hmac");
+
 exports.hashPassword = async function (plainTextPassword) {
   const salt = await bcrypt.genSalt(Number(appConfig.SALT));
   const hashPassword = bcrypt.hash(plainTextPassword, salt);
@@ -55,6 +57,33 @@ exports.createVerifyToken = async function (reqUserId) {
     userId: reqUserId,
     token: crypto.randomBytes(32).toString("hex"),
   }).save();
+};
+
+exports.callAPIWithHMAC = async (method, url, json, userInfo) => {
+  const hashData = GateKeeper.sign(
+    JSON.stringify(json),
+    appConfig.HMAC_SECRET_KEY
+  );
+  console.log(
+    "[INFO][HTTP CALL] callAPIWithHMAC: ",
+    "Method: " + method,
+    "URL: " + url,
+    "Payload: " + JSON.stringify(json),
+    "User Info: " + userInfo
+  );
+  let axiosConfig = {
+    headers: {
+      "Content-Type": "application/json;charset=UTF-8",
+      "user-agent": "authToUsers",
+    },
+  };
+  axiosConfig.headers[appConfig.HMAC_HEADER_NAME] = `${hashData.toString()}`;
+  await axios
+    .post("http://localhost/users", json, axiosConfig)
+    .then((data) => {
+      console.info(data);
+    })
+    .catch();
 };
 
 exports.checkTokenExist = async function (reqUserId, ReqToken) {

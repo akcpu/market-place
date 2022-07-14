@@ -61,7 +61,7 @@ exports.createUserandSendEmail = async (req, res) => {
       .status(HttpStatusCode.BadRequest)
       .send(
         new utils.ErrorHandler(
-          "needStrongerPassword",
+          "auth.needStrongerPassword",
           "Password is not strong enough!"
         ).json()
       );
@@ -92,45 +92,79 @@ exports.createUserandSendEmail = async (req, res) => {
       .status(HttpStatusCode.Conflict)
       .send(
         new utils.ErrorHandler(
-          "userAlreadyExist",
+          "auth.userAlreadyExist",
           "User already exist - " + req.body.email
         ).json()
       );
   }
   const salt = await bcrypt.genSalt(Number(appConfig.SALT));
   const hashPassword = await bcrypt.hash(req.body.newPassword, salt);
-
-  user = await authService.createUser(
+  let userData = await authService.createUser(
     req.body.fullName,
     req.body.email,
     hashPassword
   );
-  let verifyToken = await authService.createVerifyToken(user._id);
 
-  const link = `${appConfig.authServiceURL}/user/verify/${user.id}/${verifyToken.token}`;
-  await sendEmail(
-    user.fullName,
-    user.email,
-    "Verify Email, " + user.fullName,
-    link,
-    "email_code_verify-css",
-    link
-  ).catch(() => {
-    log.Error("Error happened in sending Email!");
+  if (!userData) {
+    log.Error("Error happened in creating User Information");
     return res
       .status(HttpStatusCode.InternalServerError)
       .send(
         new utils.ErrorHandler(
-          "internal/sendEmailAuth",
-          "Error happened in sending email! - " + req.body.email
+          "auth.createUser",
+          "Error happened in creating User Information! - " + req.url
         ).json()
       );
-  });
+  }
+  const postData = {};
+  postData.id = userData.id;
+  postData.fullName = userData.fullName;
+  postData.email = userData.email;
+  postData.password = hashPassword;
+  postData.userName = userData.email;
 
-  var viewdata = {
-    Message: "An Email sent to your account please verify.",
-  };
-  res.render("message", viewdata);
+  await authService
+    .callAPIWithHMAC("POST", req.url, postData, userData)
+    .then(() => {
+      let verifyToken = authService.createVerifyToken(userData.id);
+
+      const link = `${appConfig.authServiceURL}/user/verify/${userData.id}/${verifyToken.token}`;
+      sendEmail(
+        userData.fullName,
+        userData.email,
+        "Verify Email, " + userData.fullName,
+        link,
+        "email_code_verify-css",
+        link
+      ).catch(() => {
+        log.Error("Error happened in sending Email!");
+        return res
+          .status(HttpStatusCode.InternalServerError)
+          .send(
+            new utils.ErrorHandler(
+              "internal/sendEmailAuth",
+              "Error happened in sending email! - " + req.body.email
+            ).json()
+          );
+      });
+
+      var viewdata = {
+        Message: "An Email sent to your account please verify.",
+      };
+      res.render("message", viewdata);
+    })
+    .catch((err) => {
+      log.Error(err);
+      log.Error("Error happened in callAPIWithHMAC!");
+      return res
+        .status(HttpStatusCode.BadRequest)
+        .send(
+          new utils.ErrorHandler(
+            "auth/callAPIWithHMAC",
+            "Error happened in callAPIWithHMAC! - " + req.body.email
+          ).json()
+        );
+    });
 };
 
 // verify link sent by email
