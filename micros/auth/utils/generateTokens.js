@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const UserToken = require("../models/UserToken");
+const { UserAuth } = require("../models/user");
 const { appConfig } = require("../config");
 
 // const generateTokens = async (user) => {
@@ -23,9 +23,8 @@ const { appConfig } = require("../config");
 // };
 
 // module.exports.generateTokens = generateTokens;
-/////////////////
 exports.accessToken = async function (user) {
-  const payload = { _id: user._id, roles: user.roles };
+  const payload = { _id: user.objectId, roles: user.role };
   const jwtToken = jwt.sign(payload, appConfig.accessTPK, {
     expiresIn: "14m",
   });
@@ -33,14 +32,17 @@ exports.accessToken = async function (user) {
 };
 
 exports.refreshToken = async function (user) {
-  const payload = { _id: user._id, roles: user.roles };
+  const payload = { _id: user.objectId, roles: user.role };
   const refreshToken = jwt.sign(payload, appConfig.refreshTPK, {
     expiresIn: "30d",
   });
-  const userToken = await UserToken.findOne({ userId: user._id });
-  if (userToken) await userToken.remove();
+  return await UserAuth.updateOne(
+    { objectId: user.objectId },
+    { access_token: refreshToken }
+  );
+};
 
-  await new UserToken({ userId: user._id, token: refreshToken }).save();
-
-  return refreshToken;
+// add Counter And Last Update
+exports.addCounterAndLastUpdate = async (objectId) => {
+  return await UserAuth.findOneAndUpdate({ objectId }, {});
 };

@@ -3,13 +3,11 @@ const authRouter = express.Router();
 require("../utils/googleOauth");
 
 const {
-  showSignUp,
-  createUserandSendEmail,
-  verifyEmailLink,
-  logIn,
-  getLogIn,
+  SignupPageHandler,
+  SignupTokenHandle,
+  LoginPageHandler,
   profile,
-  logOut,
+  logout,
   getResetUserPassword,
   resetUserPassword,
   getForgetPasswordPage,
@@ -17,29 +15,50 @@ const {
   getForgetPassword,
   gitCallback,
   gitSuccess,
-  getUsers,
   getTokens,
+  VerifySignupHandle,
+  VerifyGetSignupHandle,
+  LoginTelarHandler,
+  getUsers,
+  CheckAdminHandler,
+  ChangePasswordHandler,
 } = require("../handlers");
 
-authRouter.get("/auth/signup", showSignUp);
-authRouter.post("/auth/signup", createUserandSendEmail);
-authRouter.get("/auth/user/verify/:id/:token", verifyEmailLink);
-authRouter.get("/auth/login", getLogIn);
-authRouter.post("/auth/login", logIn);
+//Admin
+authRouter.post("/auth/admincheck", CheckAdminHandler);
+// authRouter.Post("/auth/adminsignup", AdminSignupHandle);
+// authRouter.Post("/auth/adminlogin", LoginAdminHandler);
+
 authRouter.post("/auth/profile", profile);
-authRouter.get("/auth/logout", logOut);
-
-authRouter.get("/auth/reset-password", getResetUserPassword);
-authRouter.post("/auth/reset-password", resetUserPassword);
-
-authRouter.get("/auth/forget_password", getForgetPasswordPage);
-authRouter.post("/auth/forget_password", forgetPassword);
-authRouter.get("/auth/forget_password/:userId/:token", getForgetPassword);
+authRouter.get("/auth/logout", logout);
 
 authRouter.get("/auth/github/callback", gitCallback);
 authRouter.get("/auth/gitsuccess", gitSuccess);
 
 authRouter.get("/auth/getUsers", getUsers);
 authRouter.get("/auth/getTokens", getTokens);
+
+// Signup
+authRouter.get("/auth/signup", SignupPageHandler);
+authRouter.post("/auth/signup", SignupTokenHandle);
+authRouter.get("/auth/verify", VerifyGetSignupHandle);
+authRouter.post("/auth/verify", VerifySignupHandle);
+
+//TODO: verifyAcountBYLink
+// authRouter.get("/user/verify/:id/:token", verifyEmailLink);
+
+// Login
+authRouter.get("/auth/", LoginPageHandler);
+authRouter.post("/auth/", LoginTelarHandler);
+authRouter.post("/auth/telar", LoginTelarHandler);
+
+// Password
+authRouter.get("/auth/password/reset", getResetUserPassword);
+authRouter.post("/auth/password/reset", resetUserPassword);
+
+authRouter.get("/auth/password/forget", getForgetPasswordPage);
+authRouter.post("/auth/password/forget", forgetPassword);
+authRouter.get("/auth/password/forget/:userId/:token", getForgetPassword);
+authRouter.post("/auth/password/change", ChangePasswordHandler);
 
 module.exports = authRouter;

@@ -13,12 +13,11 @@ router.get(
     console.log(req);
     var viewdata = { user: req.user._json };
     res.render("google", viewdata);
-    // res.redirect("/auth/googlesuccess");
   }
 );
-router.get("/logout", (req, res) => {
-  req.logout();
-  res.redirect("/");
-});
+// router.get("/logout", (req, res) => {
+//   req.logout();
+//   res.redirect("/");
+// });
 
 module.exports = router;

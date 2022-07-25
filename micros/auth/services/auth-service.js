@@ -1,12 +1,15 @@
 const bcrypt = require("bcrypt");
 const { appConfig } = require("../config");
 const axios = require("axios").default;
-const { User } = require("../models/user");
+const { UserAuth } = require("../models/user");
+
 //Token const
 const UserToken = require("../models/UserToken");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const GateKeeper = require("../utils/hmac");
+const { validate: uuidValidate } = require("uuid");
+const { sendEmail } = require("../utils/sendEmail");
 
 exports.hashPassword = async function (plainTextPassword) {
   const salt = await bcrypt.genSalt(Number(appConfig.SALT));
@@ -15,12 +18,15 @@ exports.hashPassword = async function (plainTextPassword) {
 
   return hashPassword;
 };
-exports.getUserDataByEmail = async function (reqEmail) {
-  return await User.findOne({ email: reqEmail });
+exports.FindByUsername = async function (reqEmail) {
+  return await UserAuth.findOne({ username: reqEmail });
 };
 
-exports.checkUserExistById = async function (userId) {
-  return await User.findOne({ _id: userId });
+exports.checkUserExistById = async function (objectId, userId) {
+  return await UserAuth.findOne({
+    objectId: objectId,
+    username: userId,
+  });
 };
 exports.recaptchaV3 = async function (response_key) {
   // Put secret key here, which we get from google console
@@ -44,19 +50,57 @@ exports.recaptchaV3 = async function (response_key) {
   }
 };
 
-exports.createUser = async function (reqfullName, reqEmail, hashPassword) {
-  return await new User({
-    fullName: reqfullName,
-    email: reqEmail,
+exports.createUser = async function (reqUserId, reqEmail, hashPassword) {
+  return await new UserAuth({
+    objectId: reqUserId,
+    username: reqEmail,
     password: hashPassword,
   }).save();
 };
 
-exports.createVerifyToken = async function (reqUserId) {
+exports.CreateEmailVerficationToken = async function (userVerification) {
+  if (!uuidValidate(userVerification.UserId)) {
+    throw "Error happened in Create Email Verfication Token";
+  }
   return await new UserToken({
-    userId: reqUserId,
-    token: crypto.randomBytes(32).toString("hex"),
+    objectId: userVerification.UserId,
+    code: crypto.randomBytes(32).toString("hex").substring(0, 6),
+    userId: userVerification.Username,
+    target: userVerification.EmailTo,
+    targetType: "email",
+    remoteIpAddress: userVerification.RemoteIpAddress,
+    // last_updated: Date.now,
+    isVerified: false,
+    // FullName: userVerification.FullName,
+    // HtmlTmplPath: userVerification.HtmlTmplPath,
+    // EmailSubject: userVerification.EmailSubject,
+    // UserPassword: userVerification.UserPassword,
   }).save();
+
+  // return await new UserToken({
+  //   objectId: userVerification.UserId,
+  //   userId: userVerification.Username,
+  //   target: userVerification.EmailTo,
+  //   targetType: { type: String, default: "email" },
+  //   remoteIpAddress: userVerification.RemoteIpAddress,
+  //   FullName: userVerification.FullName,
+  //   HtmlTmplPath: userVerification.HtmlTmplPath,
+  //   EmailSubject: userVerification.EmailSubject,
+  //   UserPassword: userVerification.UserPassword,
+
+  //   objectId: { type: String, required: true },
+  //   code: { type: String, required: true },
+  //   target: { type: String, required: true },
+  //   counter: { type: Number, required: true },
+  //   created_date: { type: Date, default: Date.now, expires: 30 * 86400 }, // 30 days
+  //   remoteIpAddress: { type: String, required: true },
+  //   userId: { type: String, required: true },
+  //   isVerified: { type: Boolean, required: true },
+  //   last_updated: { type: Date, default: Date.now, expires: 30 * 86400 }, // 30 days
+
+  //   userId: reqUserId,
+  //   token: crypto.randomBytes(32).toString("hex"),
+  // }).save();
 };
 
 exports.callAPIWithHMAC = async (method, url, json, userInfo) => {
@@ -74,27 +118,68 @@ exports.callAPIWithHMAC = async (method, url, json, userInfo) => {
   let axiosConfig = {
     headers: {
       "Content-Type": "application/json;charset=UTF-8",
-      "user-agent": "authToUsers",
+      "user-agent": "authToProfiles",
     },
   };
   axiosConfig.headers[appConfig.HMAC_HEADER_NAME] = `${hashData.toString()}`;
   await axios
-    .post("http://localhost/users", json, axiosConfig)
+    .post("http://localhost/profile/dto/", json, axiosConfig)
     .then((data) => {
       console.info(data);
+      return true;
     })
     .catch();
 };
 
-exports.checkTokenExist = async function (reqUserId, ReqToken) {
-  return await UserToken.findOne({
-    userId: reqUserId,
-    token: ReqToken,
-  });
+exports.getUserProfileByID = async function (reqUserId) {
+  const profileURL = `profile/${reqUserId}`;
+  let axiosConfig = {
+    headers: {
+      "Content-Type": "application/json;charset=UTF-8",
+      "user-agent": "authToProfile",
+    },
+  };
+  await axios
+    .get(profileURL)
+    .then(function (foundProfile) {
+      console.log("foundProfile");
+      console.log(foundProfile);
+    })
+    .catch((err) => {
+      //TODO: Expansion of errors
+      if (appConfig.Node_ENV === "development") {
+        if (err.response) {
+          // The client was given an error response (5xx, 4xx)
+          console.log(err.response.data);
+          console.log(err.response.status);
+          console.log(err.response.headers);
+        } else if (err.request) {
+          // The client never received a response, and the request was never left
+          console.log(err.request);
+        } else {
+          // Anything else
+          console.log("Error", err.message);
+        }
+      }
+      if (err.response.status == 404)
+        console.log("NotFoundHTTPStatusError: " + err);
+
+      console.log(`functionCall ${profileURL} -  ${err.message}`);
+      return Error("getUserProfileByID/functionCall");
+    });
+};
+exports.checkTokenExist = async function (reqCode) {
+  return await UserToken.findOne({ code: reqCode });
+};
+exports.checkTokenExistByUserId = async function (robjectId, rcode) {
+  return await UserToken.findOne({ objectId: robjectId, code: rcode });
+};
+exports.countExistToken = async function (reqCode) {
+  return await UserToken.findOne({ code: reqCode });
 };
 
 exports.updateVerifyUser = async function (reqUserId, verified) {
-  User.updateOne({ _id: reqUserId }, { verified: verified })
+  UserToken.updateOne({ objectId: reqUserId }, { isVerified: verified })
     .then((obj) => {
       console.log("updateOne Updated - " + obj);
       // res.redirect("orders");
@@ -102,33 +187,46 @@ exports.updateVerifyUser = async function (reqUserId, verified) {
     .catch((err) => {
       console.log("updateOne Error: " + err);
     });
+
+  //TODO: PhoneVerfy
+  return await UserAuth.updateOne(
+    { objectId: reqUserId },
+    { emailVerified: verified }
+  );
 };
 
-exports.findByIdAndRemoveToken = async function (tokenId) {
-  return await UserToken.findByIdAndRemove(tokenId)
-    .then((obj) => {
-      console.log("findByIdAndRemove - " + obj);
+exports.updateTokenCounter = async function (tokenId) {
+  UserToken.findOne({ objectId: tokenId })
+    .then((result) => {
+      let count = result.counter + 1;
+      return UserToken.updateOne({ objectId: tokenId }, { counter: count });
     })
     .catch((err) => {
-      console.log("findByIdAndRemove Error: " + err);
+      console.log("updateTokenCounter Error: " + err);
     });
 };
 
-exports.checkUserVerify = async function (reqEmail) {
-  if (await User.findOne({ email: reqEmail }, { verified: true })) return true;
-  else return false;
-};
+// exports.checkUserVerify = async function (reqUserName) {
+//   if (
+//     await UserAuth.findOne(
+//       { username: reqUserName },
+//       { emailVerified: true } || { phoneVerified: true }
+//     )
+//   )
+//     return true;
+//   else return false;
+// };
 
-exports.checkPasswordVerify = async function (reqPassword, userPassword) {
+exports.CompareHash = async function (reqPassword, userPassword) {
   return await bcrypt.compare(reqPassword, userPassword);
 };
 
 exports.findUserByAccessToken = async function (token) {
   try {
     const decode = jwt.verify(token, appConfig.accessTPK);
-    return User.findById(decode._id);
+    return UserAuth.findOne({ objectId: decode._id });
   } catch (error) {
-    return 0;
+    throw new Error(error);
   }
 };
 
@@ -139,8 +237,13 @@ exports.changeUserPasswordByAccessToken = async function (
 ) {
   try {
     const decode = await jwt.verify(token, appConfig.accessTPK);
+    console.log(decode);
+
     const salt = await bcrypt.genSalt(Number(appConfig.SALT));
-    let findUser = await User.findById(decode._id);
+    let findUser = await UserAuth.findOne({ objectId: decode._id });
+
+    console.log(oldPassword);
+    console.log(findUser.password);
     if (!bcrypt.compareSync(oldPassword, findUser.password)) {
       throw new Error();
     }
@@ -152,25 +255,39 @@ exports.changeUserPasswordByAccessToken = async function (
   }
 };
 
-exports.getTokenByUserId = async function (reqUserId) {
-  return await UserToken.findOne({ userId: reqUserId });
+exports.getTokenByUserId = async function (objectId) {
+  return await UserToken.findOne({ objectId: objectId });
 };
 
-exports.createToken = async function (reqUserId) {
-  return await new UserToken({
-    userId: reqUserId,
-    token: crypto.randomBytes(32).toString("hex"),
-  }).save();
+exports.createToken = async function (objectId) {
+  await UserToken.findOneAndUpdate(
+    { objectId: objectId },
+    { code: crypto.randomBytes(32).toString("hex").substring(0, 6) }
+  );
+  return await UserToken.findOne({ objectId: objectId });
+  // return await new UserToken({
+  //   objectId: reqUserId,
+  //   code: crypto.randomBytes(32).toString("hex"),
+  // }).save();
 };
 
 exports.findUserById = async function (user_id) {
-  return await User.findOne({ _id: user_id });
+  return await UserAuth.findOne({ objectId: user_id });
 };
 exports.getUsers = async function () {
-  return await User.find();
+  return await UserAuth.find();
 };
 exports.getTokens = async function () {
   return await UserToken.find();
+};
+
+// add Counter And Last Update
+exports.addCounterAndLastUpdate = async (objectId) => {
+  UserAuth.findOneAndUpdate({ objectId }, { last_updated: Date.now() });
+  return await UserToken.findOneAndUpdate(
+    { objectId: objectId },
+    { $inc: { counter: 1 }, last_updated: Date.now() }
+  );
 };
 
 exports.saveUser = function (findUser) {
