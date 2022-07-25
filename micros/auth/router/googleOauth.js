@@ -15,9 +15,5 @@ router.get(
     res.render("google", viewdata);
   }
 );
-// router.get("/logout", (req, res) => {
-//   req.logout();
-//   res.redirect("/");
-// });
 
 module.exports = router;

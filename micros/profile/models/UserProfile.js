@@ -36,27 +36,6 @@ const ProfilesSchema = new Schema({
     enum: ["user", "admin", "super_admin"],
     default: ["user"],
   },
-
-  // id: {
-  //   type: String,
-  //   required: true,
-  // },
-  // fullName: {
-  //   type: String,
-  //   required: true,
-  // },
-  // userName: {
-  //   type: String,
-  //   required: true,
-  // },
-  // password: {
-  //   type: String,
-  //   required: true,
-  // },
-  // emailUser: {
-  //   type: String,
-  //   required: true,
-  // },
 });
 
 module.exports = mongoose.model("UserProfile", ProfilesSchema);

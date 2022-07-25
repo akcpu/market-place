@@ -69,38 +69,8 @@ exports.CreateEmailVerficationToken = async function (userVerification) {
     target: userVerification.EmailTo,
     targetType: "email",
     remoteIpAddress: userVerification.RemoteIpAddress,
-    // last_updated: Date.now,
     isVerified: false,
-    // FullName: userVerification.FullName,
-    // HtmlTmplPath: userVerification.HtmlTmplPath,
-    // EmailSubject: userVerification.EmailSubject,
-    // UserPassword: userVerification.UserPassword,
   }).save();
-
-  // return await new UserToken({
-  //   objectId: userVerification.UserId,
-  //   userId: userVerification.Username,
-  //   target: userVerification.EmailTo,
-  //   targetType: { type: String, default: "email" },
-  //   remoteIpAddress: userVerification.RemoteIpAddress,
-  //   FullName: userVerification.FullName,
-  //   HtmlTmplPath: userVerification.HtmlTmplPath,
-  //   EmailSubject: userVerification.EmailSubject,
-  //   UserPassword: userVerification.UserPassword,
-
-  //   objectId: { type: String, required: true },
-  //   code: { type: String, required: true },
-  //   target: { type: String, required: true },
-  //   counter: { type: Number, required: true },
-  //   created_date: { type: Date, default: Date.now, expires: 30 * 86400 }, // 30 days
-  //   remoteIpAddress: { type: String, required: true },
-  //   userId: { type: String, required: true },
-  //   isVerified: { type: Boolean, required: true },
-  //   last_updated: { type: Date, default: Date.now, expires: 30 * 86400 }, // 30 days
-
-  //   userId: reqUserId,
-  //   token: crypto.randomBytes(32).toString("hex"),
-  // }).save();
 };
 
 exports.callAPIWithHMAC = async (method, url, json, userInfo) => {

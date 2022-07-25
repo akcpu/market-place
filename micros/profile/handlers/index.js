@@ -11,23 +11,17 @@ const profileService = require("../services/profile-service");
 // GET /UserProfile
 exports.getProfileData = async function (req, res) {
   const profile = await profileService.getProfileData(req.params.id);
-  console.log(profile);
-  console.log("ERRoR .....................................");
-  //TODO: Create Error Hanlder
   if (!profile) {
-    console.log("ERRoR .....................................");
-    console.log("ERRoR .....................................");
-    // log.Error("getProfileDataHandle: Error happened in get data from profile!");
-    // return res
-    //   .status(HttpStatusCode.Unauthorized)
-    //   .send(
-    //     new utils.ErrorHandler(
-    //       "profile.getprifiledatamissing",
-    //       "get profile data missing"
-    //     ).json()
-    //   );
+    log.Error("getProfileDataHandle: Error happened in get data from profile!");
+    return res
+      .status(HttpStatusCode.Unauthorized)
+      .send(
+        new utils.ErrorHandler(
+          "profile.getprifiledatamissing",
+          "get profile data missing"
+        ).json()
+      );
   }
-
   return profile;
 };
 

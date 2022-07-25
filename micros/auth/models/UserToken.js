@@ -12,9 +12,6 @@ const UserVerificationTokenSchema = new Schema({
   userId: { type: String, required: true, trim: true, unique: true },
   isVerified: { type: Boolean, required: true, default: false },
   last_updated: { type: Date, default: Date.now },
-  // userId: { type: Schema.Types.ObjectId, required: true, ref: "user" },
-  // token: { type: String, required: true },
-  // createdAt: { type: Date, default: Date.now, expires: 30 * 86400 }, // 30 days
 });
 
 module.exports = mongoose.model("UserToken", UserVerificationTokenSchema);
