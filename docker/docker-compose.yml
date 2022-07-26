@@ -34,7 +34,7 @@ services:
     depends_on:
       - db
     env_file:
-      - "../config/env/.env.profile_config"
+      - "../config/env/.env.profile.config"
   products:
     build:
       context: ../
@@ -46,7 +46,7 @@ services:
     depends_on:
       - db
     env_file:
-      - "../config/env/.env.products_config"
+      - "../config/env/.env.products.config"
   auth:
     build:
       context: ../
@@ -58,4 +58,4 @@ services:
     depends_on:
       - db
     env_file:
-      - "../config/env/.env.auth_config"
+      - "../config/env/.env.auth.config"

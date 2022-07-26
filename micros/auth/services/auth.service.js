@@ -9,16 +9,13 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const GateKeeper = require("../utils/hmac");
 const { validate: uuidValidate } = require("uuid");
-const { sendEmail } = require("../utils/sendEmail");
 
 exports.hashPassword = async function (plainTextPassword) {
   const salt = await bcrypt.genSalt(Number(appConfig.SALT));
   const hashPassword = bcrypt.hash(plainTextPassword, salt);
-  console.log(hashPassword);
-
   return hashPassword;
 };
-exports.FindByUsername = async function (reqEmail) {
+exports.findByUsername = async function (reqEmail) {
   return await UserAuth.findOne({ username: reqEmail });
 };
 
@@ -78,6 +75,7 @@ exports.callAPIWithHMAC = async (method, url, json, userInfo) => {
     JSON.stringify(json),
     appConfig.HMAC_SECRET_KEY
   );
+
   console.log(
     "[INFO][HTTP CALL] callAPIWithHMAC: ",
     "Method: " + method,
@@ -110,9 +108,8 @@ exports.getUserProfileByID = async function (reqUserId) {
     },
   };
   await axios
-    .get(profileURL)
+    .get(profileURL, axiosConfig)
     .then(function (foundProfile) {
-      console.log("foundProfile");
       console.log(foundProfile);
     })
     .catch((err) => {
@@ -194,7 +191,7 @@ exports.CompareHash = async function (reqPassword, userPassword) {
 exports.findUserByAccessToken = async function (token) {
   try {
     const decode = jwt.verify(token, appConfig.accessTPK);
-    return UserAuth.findOne({ objectId: decode._id });
+    return UserAuth.findOne({ objectId: decode.id });
   } catch (error) {
     throw new Error(error);
   }
@@ -207,13 +204,8 @@ exports.changeUserPasswordByAccessToken = async function (
 ) {
   try {
     const decode = await jwt.verify(token, appConfig.accessTPK);
-    console.log(decode);
-
     const salt = await bcrypt.genSalt(Number(appConfig.SALT));
-    let findUser = await UserAuth.findOne({ objectId: decode._id });
-
-    console.log(oldPassword);
-    console.log(findUser.password);
+    let findUser = await UserAuth.findOne({ objectId: decode.id });
     if (!bcrypt.compareSync(oldPassword, findUser.password)) {
       throw new Error();
     }
@@ -241,8 +233,8 @@ exports.createToken = async function (objectId) {
   // }).save();
 };
 
-exports.findUserById = async function (user_id) {
-  return await UserAuth.findOne({ objectId: user_id });
+exports.findUserById = async function (userId) {
+  return await UserAuth.findOne({ objectId: userId });
 };
 exports.getUsers = async function () {
   return await UserAuth.find();

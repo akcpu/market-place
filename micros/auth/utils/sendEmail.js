@@ -25,7 +25,6 @@ exports.sendEmail = function (
       { encoding: "utf-8" },
       function (err, html) {
         if (err) {
-          console.log(err);
           reject(err);
         } else {
           var mapObj = {

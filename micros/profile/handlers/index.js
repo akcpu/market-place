@@ -6,7 +6,7 @@ const { appConfig } = require("../config");
 const log = require("../utils/errorLogger");
 const utils = require("../utils/error-handler");
 const { HttpStatusCode } = require("../utils/HttpStatusCode");
-const profileService = require("../services/profile-service");
+const profileService = require("../services/profile.service");
 
 // GET /UserProfile
 exports.getProfileData = async function (req, res) {
@@ -75,28 +75,45 @@ exports.getProfileById = function (req, res) {
       })
       .catch(() => res.status(404).json({ msg: "No profile found" }));
   } else {
-    console.log(validate_getID.errors);
-    res
-      .status(404)
-      .json({ msg: "No user found" + JSON.stringify(validate_getID.errors) });
+    log.Error(
+      `getProfileById: Get Profile Problem ${JSON.stringify(
+        validate_getID.errors
+      )}`
+    );
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "profile.missingGetProfile",
+          "Missing Get Profile"
+        ).json()
+      );
   }
 };
 
 // POST /profiles
-exports.setprofile = function (req, res) {
-  console.log(`.:PROFILE INORMATION:. ${JSON.stringify(req.body)}`);
+exports.setProfile = function (req, res) {
   let hash = req.header(appConfig.HMAC_HEADER_NAME);
   hmac
     .validate(JSON.stringify(req.body), appConfig.HMAC_SECRET_KEY, hash)
     .then(() => {
       if (validate_setData(req.body)) {
-        profileService.setprofile(req.body);
+        profileService.setProfile(req.body);
         res.send("User has been added to Profile microservice service");
       } else {
-        console.log(validate_setData.errors);
-        res.status(404).json({
-          msg: "No user found" + JSON.stringify(validate_setData.errors),
-        });
+        log.Error(
+          `setProfile: Set Profile Problem ${JSON.stringify(
+            validate_setData.errors
+          )}`
+        );
+        return res
+          .status(HttpStatusCode.BadRequest)
+          .send(
+            new utils.ErrorHandler(
+              "profile.missingSetProfile",
+              "Missing Set Profile"
+            ).json()
+          );
       }
     })
     .catch((err) => {

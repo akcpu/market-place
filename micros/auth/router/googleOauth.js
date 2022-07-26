@@ -10,9 +10,8 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/" }),
   (req, res) => {
-    console.log(req);
-    var viewdata = { user: req.user._json };
-    res.render("google", viewdata);
+    var viewData = { user: req.user._json };
+    res.render("google", viewData);
   }
 );
 

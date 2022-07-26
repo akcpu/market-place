@@ -3,7 +3,7 @@ const { UserAuth } = require("../models/user");
 const { appConfig } = require("../config");
 
 exports.accessToken = async function (user) {
-  const payload = { _id: user.objectId, roles: user.role };
+  const payload = { id: user.objectId, roles: user.role };
   const jwtToken = jwt.sign(payload, appConfig.accessTPK, {
     expiresIn: "14m",
   });
@@ -11,7 +11,7 @@ exports.accessToken = async function (user) {
 };
 
 exports.refreshToken = async function (user) {
-  const payload = { _id: user.objectId, roles: user.role };
+  const payload = { id: user.objectId, roles: user.role };
   const refreshToken = jwt.sign(payload, appConfig.refreshTPK, {
     expiresIn: "30d",
   });

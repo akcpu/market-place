@@ -14,7 +14,7 @@ exports.getProfileById = function (userId) {
 exports.findProfileByAccessToken = async function (token) {
   try {
     const decode = jwt.verify(token, appConfig.accessTPK);
-    return UserProfile.findOne({ objectId: decode._id });
+    return UserProfile.findOne({ objectId: decode.id });
   } catch (error) {
     throw new Error(error);
   }
@@ -37,7 +37,7 @@ exports.generateRandomNumber = function (min, max) {
   return Math.floor(Math.random() * max) + min;
 };
 
-exports.setprofile = function (profile) {
+exports.setProfile = function (profile) {
   const newProfile = new UserProfile({
     socialName: this.generateSocialName(profile.fullName, profile.id),
     objectId: profile.id,

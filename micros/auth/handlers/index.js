@@ -1,5 +1,5 @@
 const { appConfig } = require("../config");
-const authService = require("../services/auth-service");
+const authService = require("../services/auth.service");
 const { sendEmail } = require("../utils/sendEmail");
 const axios = require("axios");
 const zxcvbn = require("zxcvbn");
@@ -14,17 +14,15 @@ const {
 } = require("../utils/validationSchema");
 const generateTokens = require("../utils/generateTokens");
 
-const { User, UserAuthValidate } = require("../models/user");
 const Joi = require("joi");
 
 const log = require("../utils/errorLogger");
 const utils = require("../utils/error-handler");
 const { HttpStatusCode } = require("../utils/HttpStatusCode");
-const { json } = require("express");
 
 // SignupPageHandler creates a handler for logging in
-exports.SignupPageHandler = async (req, res) => {
-  var viewdata = {
+exports.signupPageHandler = async (req, res) => {
+  var viewData = {
     Title: "Create User",
     OrgName: appConfig.OrgName,
     OrgAvatar: appConfig.OrgAvatar,
@@ -34,16 +32,16 @@ exports.SignupPageHandler = async (req, res) => {
     RecaptchaKey: appConfig.recaptchaSiteKey,
     VerifyType: appConfig.VerifyType,
   };
-  res.render("signup", viewdata);
+  res.render("signup", viewData);
 };
 
 // SignupTokenHandle create signup token
-exports.SignupTokenHandle = async (req, res) => {
+exports.signupTokenHandle = async (req, res) => {
   // TODO: Validation Implation
   // const { error } = UserAuthValidate(req.body);
   // if (error) {
   //   log.Error(error);
-  //   log.Error("SignupTokenHandle: missing validation");
+  //   log.Error("signupTokenHandle: missing validation");
   //   return res
   //     .status(HttpStatusCode.BadRequest)
   //     .send(
@@ -112,7 +110,7 @@ exports.SignupTokenHandle = async (req, res) => {
 
   // Check user exist
   await authService
-    .FindByUsername(req.body.email)
+    .findByUsername(req.body.email)
     .then((userAuth) => {
       if (userAuth) {
         log.Error("userAlreadyExist", "User already exist - " + req.body.email);
@@ -218,13 +216,21 @@ exports.SignupTokenHandle = async (req, res) => {
           });
         })
         .catch((err) => {
-          console.log(`Error While Create Token: ${err}`);
+          log.Error(`Error While Create Token: ${err}`);
+          return res
+            .status(HttpStatusCode.InternalServerError)
+            .send(
+              new utils.ErrorHandler(
+                "internal/createTokenAuth",
+                "Error happened in creating Token! - " + req.body.email
+              ).json()
+            );
         });
 
-      var viewdata = {
+      var viewData = {
         Message: "An Email sent to your account please verify.",
       };
-      res.render("message", viewdata);
+      res.render("message", viewData);
     })
     .catch((err) => {
       log.Error(err);
@@ -241,8 +247,8 @@ exports.SignupTokenHandle = async (req, res) => {
 };
 
 // Verify Show Signup Handle
-exports.VerifyGetSignupHandle = async (req, res) => {
-  var viewdata = {
+exports.verifyGetSignupHandle = async (req, res) => {
+  var viewData = {
     Title: "Verifaction - Telar Social",
     AppName: appConfig.AppName,
     OrgAvatar: appConfig.OrgAvatar,
@@ -251,11 +257,11 @@ exports.VerifyGetSignupHandle = async (req, res) => {
     SignupLink: "/auth/signup",
     Message: "You Can Signin To the Website",
   };
-  res.render("code_verification", viewdata);
+  res.render("code_verification", viewData);
 };
 
 // Verify Send Signup Handle
-exports.VerifySignupHandle = async (req, res) => {
+exports.verifySignupHandle = async (req, res) => {
   const token = await authService.checkTokenExist(req.body.code);
   if (!token) {
     log.Error("verifySignupHandle: Error happened in check token exist");
@@ -300,10 +306,10 @@ exports.VerifySignupHandle = async (req, res) => {
   await authService.updateVerifyUser(user.objectId, true);
   await authService.updateTokenCounter(user.objectId);
 
-  var viewdata = {
+  var viewData = {
     Message: "account verified successfully",
   };
-  res.render("message", viewdata);
+  res.render("message", viewData);
 };
 
 // verify link sent by email
@@ -337,23 +343,23 @@ exports.verifyEmailLink = async (req, res) => {
       );
   }
 
-  await authService.updateVerifyUser(user._id, true);
-  await authService.findByIdAndRemoveToken(token._id);
+  await authService.updateVerifyUser(user.objectId, true);
+  await authService.findByIdAndRemoveToken(token.objectId);
 
-  var viewdata = {
+  var viewData = {
     Message: "email verified sucessfully",
   };
-  res.render("message", viewdata);
+  res.render("message", viewData);
 };
 // LoginPageHandler creates a handler for logging in
-exports.LoginPageHandler = async (req, res) => {
+exports.loginPageHandler = async (req, res) => {
   let gitClientID = appConfig.clientID
     ? "https://github.com/login/oauth/authorize?client_id=" +
       appConfig.clientID +
       "scope=user%20repo_deployment%20read:user"
     : "";
 
-  var viewdata = {
+  var viewData = {
     AppName: appConfig.AppName,
     OrgName: appConfig.OrgName,
     ActionForm: "/auth/",
@@ -365,14 +371,14 @@ exports.LoginPageHandler = async (req, res) => {
     Title: "Login - Telar Social",
     OrgAvatar: appConfig.OrgAvatar,
   };
-  res.render("login", viewdata);
+  res.render("login", viewData);
 };
 
 // POST login
-exports.LoginTelarHandler = async (req, res) => {
+exports.loginHandler = async (req, res) => {
   const { error } = logInBodyValidation(req.body);
   if (error) {
-    log.Error("LoginHandle: missing validation");
+    log.Error("loginHandler: missing validation");
     return res
       .status(HttpStatusCode.BadRequest)
       .send(
@@ -383,12 +389,12 @@ exports.LoginTelarHandler = async (req, res) => {
       );
   }
   const foundUser = await authService
-    .FindByUsername(req.body.username)
+    .findByUsername(req.body.username)
     .catch((err) => {
-      log.Error(`LoginHandle: User not found ${err}`);
+      log.Error(`loginHandler: User not found ${err}`);
     });
   if (!foundUser) {
-    log.Error("LoginHandle: Invalid email or password");
+    log.Error("loginHandler: Invalid email or password");
     return res
       .status(HttpStatusCode.Unauthorized)
       .send(
@@ -400,7 +406,7 @@ exports.LoginTelarHandler = async (req, res) => {
   }
 
   if (!foundUser.emailVerified && !foundUser.phoneVerified) {
-    log.Error("LoginHandle: Unverified email");
+    log.Error("loginHandler: Unverified email");
     return res
       .status(HttpStatusCode.Unauthorized)
       .send(
@@ -417,7 +423,7 @@ exports.LoginTelarHandler = async (req, res) => {
   );
 
   if (!CompareHash) {
-    log.Error(`LoginHandle: Password doesn't match ${CompareHash}`);
+    log.Error(`loginHandler: Password doesn't match ${CompareHash}`);
     return res
       .status(HttpStatusCode.Unauthorized)
       .send(
@@ -431,7 +437,7 @@ exports.LoginTelarHandler = async (req, res) => {
   const profile = authService.getUserProfileByID(foundUser.objectId);
 
   if (!profile) {
-    log.Error(`LoginHandle: Profile doesn't exist ${profile}`);
+    log.Error(`loginHandler: Profile doesn't exist ${profile}`);
   }
   // If you request a user login with a user role,
   // use the refresh Token to log in, and other roles must use accessToken
@@ -450,10 +456,10 @@ exports.LoginTelarHandler = async (req, res) => {
 };
 
 // CheckAdmin find user auth by userId
-exports.CheckAdminHandler = async (req, res) => {
+exports.checkAdminHandler = async (req, res) => {
   const token = req.cookies.token;
   if (!token) {
-    log.Error("CheckAdminHandler: Token Problem");
+    log.Error("checkAdminHandler: Token Problem");
     return res
       .status(HttpStatusCode.Unauthorized)
       .send(
@@ -462,7 +468,7 @@ exports.CheckAdminHandler = async (req, res) => {
   }
   const findUser = authService.findUserByAccessToken(token);
   if (!findUser) {
-    log.Error("CheckAdminHandler: Not Found User With Exist Token");
+    log.Error("checkAdminHandler: Not Found User With Exist Token");
     return res
       .status(HttpStatusCode.NotFound)
       .send(
@@ -472,71 +478,16 @@ exports.CheckAdminHandler = async (req, res) => {
         ).json()
       );
   }
-  console.log(findUser);
   if (findUser.role == "admin") return findUser;
 };
 
-exports.profile = async (req, res) => {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401).end();
-  }
-  const findUser = authService.findUserByAccessToken(token);
-  if (!findUser) {
-    return res.status(401).end();
-  }
-
-  const { _id, fullName, email, password, verified, roles } = findUser;
-  res.status(200).json({
-    error: false,
-    message:
-      "username: " +
-      fullName +
-      "_id: " +
-      _id +
-      "full name: " +
-      fullName +
-      "email: " +
-      email +
-      "password: " +
-      password +
-      "verified: " +
-      verified +
-      roles +
-      "Access successfully",
-  });
-
-  // const salt = await bcrypt.genSalt(Number(appConfig.SALT));
-  // const hashPassword = await bcrypt.hash("123456789", salt);
-
-  // const doc = await User.findById(decode._id);
-  // doc.fullName = "reza";
-  // doc.password = hashPassword;
-  // await doc.save();
-
-  // res.status(200).json({
-  //   error: false,
-  //   message:
-  //     "username: " +
-  //     doc.fullName +
-  //     "password: " +
-  //     doc.password +
-  //     "Change successfully",
-  // });
-};
-
 exports.logout = (req, res) => {
-  // router.get("/logout", (req, res) => {
-  //   req.logout();
-  //   res.redirect("/");
-  // });
-
   res.clearCookie("token");
   res.clearCookie("refreshToken");
-  var viewdata = {
+  var viewData = {
     Message: "User LogOut successfully.",
   };
-  res.render("message", viewdata);
+  res.render("message", viewData);
 };
 
 // Get Change password Page
@@ -567,7 +518,7 @@ exports.getResetUserPassword = async (req, res) => {
       );
   }
 
-  var viewdata = {
+  var viewData = {
     AppName: appConfig.AppName,
     ActionForm: "/auth/password/reset",
     LoginLink: "/auth/login",
@@ -575,7 +526,7 @@ exports.getResetUserPassword = async (req, res) => {
     Title: "Reset User Password",
     OrgAvatar: appConfig.OrgAvatar,
   };
-  res.render("reset_password", viewdata);
+  res.render("reset_password", viewData);
 };
 
 // Change User password
@@ -603,10 +554,10 @@ exports.resetUserPassword = async (req, res) => {
         res.clearCookie("token");
         res.clearCookie("refreshToken");
 
-        var viewdata = {
+        var viewData = {
           Message: "change password sucessfully.",
         };
-        res.render("message", viewdata);
+        res.render("message", viewData);
       })
       .catch(() => {
         res.clearCookie("token");
@@ -622,14 +573,21 @@ exports.resetUserPassword = async (req, res) => {
           );
       });
   } catch (error) {
-    console.log(error);
-    res.send("An error occured");
+    log.Error("ResetPassHandle: An Error Occurred");
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "missingResetPassword",
+          "Missing Reset Password"
+        ).json()
+      );
   }
 };
 
 // Forget password Page
 exports.getForgetPasswordPage = async (req, res) => {
-  var viewdata = {
+  var viewData = {
     AppName: appConfig.AppName,
     LoginLink: "/auth/login",
     OrgName: appConfig.AppName,
@@ -637,7 +595,7 @@ exports.getForgetPasswordPage = async (req, res) => {
     OrgAvatar: appConfig.OrgAvatar,
     ActionForm: "/auth/password/forget",
   };
-  res.render("forget_password", viewdata);
+  res.render("forget_password", viewData);
 };
 
 // Send reset password link
@@ -666,7 +624,7 @@ exports.forgetPassword = async (req, res) => {
   }
 
   //TODO: why check exist(In Go) - NOW IS FIXED
-  const user = await authService.FindByUsername(req.body.email);
+  const user = await authService.findByUsername(req.body.email);
   if (!user) {
     log.Error(`ForgetPassHandle : User not exist by email : ${user}`);
     return res
@@ -684,7 +642,6 @@ exports.forgetPassword = async (req, res) => {
   // const link = `${appConfig.authServiceURL}/forget_password/${user.objectId}/${token.code}`;
   const link = `${appConfig.authServiceURL}/password/forget/${user.objectId}/${token.code}`;
 
-  console.log(token);
   let sendMail = false;
   sendMail = await sendEmail(
     user.username,
@@ -705,10 +662,10 @@ exports.forgetPassword = async (req, res) => {
         ).json()
       );
   }
-  var viewdata = {
+  var viewData = {
     Message: "password reset link sent to your email account",
   };
-  res.render("message", viewdata);
+  res.render("message", viewData);
 };
 
 // Forget password
@@ -753,12 +710,11 @@ exports.getForgetPassword = async (req, res) => {
         ).json()
       );
   }
-  console.log(token);
   await authService.addCounterAndLastUpdate(token.objectId);
   const access = await generateTokens.accessToken(user);
   await generateTokens.refreshToken(user);
   res.cookie("token", access);
-  var viewdata = {
+  var viewData = {
     AppName: appConfig.AppName,
     ActionForm: "/auth/password/change",
     LoginLink: "/auth/login",
@@ -766,20 +722,20 @@ exports.getForgetPassword = async (req, res) => {
     Title: "Forget Password",
     OrgAvatar: appConfig.OrgAvatar,
   };
-  res.render("reset_password", viewdata);
+  res.render("reset_password", viewData);
 };
 // ChangePasswordHandler creates a handler for logging in
-exports.ChangePasswordHandler = async (req, res) => {
+exports.changePasswordHandler = async (req, res) => {
   try {
     //TODO: Not Empty token!!! and res.clear >> not exist token!!
     const token = req.cookies.token;
     if (!token) {
-      log.Error("ResetPassHandle: Authentication Problem");
+      log.Error("changePassHandle: Authentication Problem");
       return res
         .status(HttpStatusCode.Unauthorized)
         .send(
           new utils.ErrorHandler(
-            "auth.missingloginAuth",
+            "auth.changePassHandle",
             "Missing Authentication"
           ).json()
         );
@@ -794,27 +750,34 @@ exports.ChangePasswordHandler = async (req, res) => {
         res.clearCookie("token");
         res.clearCookie("refreshToken");
 
-        var viewdata = {
+        var viewData = {
           Message: "change password sucessfully.",
         };
-        res.render("message", viewdata);
+        res.render("message", viewData);
       })
       .catch(() => {
         res.clearCookie("token");
         res.clearCookie("refreshToken");
-        log.Error("ResetPassHandle: Find User Problem");
+        log.Error("changePassHandle: Find User Problem");
         return res
           .status(HttpStatusCode.Unauthorized)
           .send(
             new utils.ErrorHandler(
-              "missingResetPassword",
-              "Missing Reset Password"
+              "missingChangePassHandle",
+              "Missing Change Password"
             ).json()
           );
       });
   } catch (error) {
-    console.log(error);
-    res.send("An error occured");
+    log.Error(`changePassHandle: An Error Occurred ${error}`);
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "missingChangePassHandle",
+          "Missing Change Password"
+        ).json()
+      );
   }
 };
 
@@ -857,9 +820,8 @@ exports.gitSuccess = (req, res) => {
     },
   })
     .then((response) => {
-      console.log(response);
-      var viewdata = { userData: response.data };
-      res.render("success", viewdata);
+      var viewData = { userData: response.data };
+      res.render("success", viewData);
     })
     .catch((err) => {
       log.Error(`GithubHandle: response Github Authorization Problem ${err}`);
