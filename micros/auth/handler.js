@@ -1,8 +1,10 @@
 const app = require("express")();
 const db = require("./database");
-const errorService = require("../../micros/auth/services/errors");
-const authRouter = require("./router");
 const session = require("express-session");
+const passport = require("passport");
+
+const errorService = require("../auth/services/errors");
+const authRouter = require("./router");
 const { appConfig } = require("../auth/config");
 app.use(
   session({
@@ -11,13 +13,17 @@ app.use(
     secret: appConfig.SESSION_SECRET_KEY,
   })
 );
-const passport = require("passport");
 app.use(passport.initialize());
 app.use(passport.session());
 app.use("/auth", require("../auth/router/googleOauth"));
+
 app.use(authRouter);
 app.use(errorService);
+
 db.connect();
+app.disable("x-powered-by");
+
+// View Engine
 const cons = require("consolidate");
 app.engine("html", cons.mustache);
 app.set("view engine", "html");
