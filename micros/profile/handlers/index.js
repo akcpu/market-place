@@ -58,7 +58,9 @@ exports.getProfile = async function (req, res) {
 };
 
 // GET All Profiles
-exports.getProfiles = function (req, res) {
+exports.getProfiles = async function (req, res) {
+  console.log("object");
+  await res.send("profiles");
   profileService
     .getProfiles()
     .then((profiles) => res.send(profiles))
@@ -66,15 +68,23 @@ exports.getProfiles = function (req, res) {
 };
 
 // GET /Profile/:id
-exports.getProfileById = function (req, res) {
-  if (validate_getID(req.params)) {
-    profileService
-      .getProfileById(req.params.id)
-      .then((profiles) => {
-        res.send(profiles);
-      })
-      .catch(() => res.status(404).json({ msg: "No profile found" }));
-  } else {
+exports.getProfileById = async function (req, res) {
+  const token = req.cookies.token;
+  if (!token) {
+    log.Error("GetProfileHandle: Get Profile Problem");
+    return res
+      .status(HttpStatusCode.Unauthorized)
+      .send(
+        new utils.ErrorHandler(
+          "profile.missingGetProfile",
+          "Missing Get Profile"
+        ).json()
+      );
+  }
+  //TODO: TokenExpiredError: jwt expired
+  const profile = await profileService.findProfileByAccessToken(token);
+
+  if (!profile) {
     log.Error(
       `getProfileById: Get Profile Problem ${JSON.stringify(
         validate_getID.errors
@@ -89,6 +99,8 @@ exports.getProfileById = function (req, res) {
         ).json()
       );
   }
+
+  res.send(profile);
 };
 
 // POST /profiles

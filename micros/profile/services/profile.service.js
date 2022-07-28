@@ -14,7 +14,7 @@ exports.getProfileById = function (userId) {
 exports.findProfileByAccessToken = async function (token) {
   try {
     const decode = jwt.verify(token, appConfig.accessTPK);
-    return UserProfile.findOne({ objectId: decode.id });
+    return await UserProfile.findOne({ objectId: decode.id });
   } catch (error) {
     throw new Error(error);
   }

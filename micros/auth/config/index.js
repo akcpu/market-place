@@ -14,7 +14,7 @@ exports.appConfig = {
   emailPassword: decodeBase64(process.env.EMAIL_PASS),
   emailSender: decodeBase64(process.env.EMAIL_SENDER),
   baseURL: decodeBase64(process.env.BASE_URL),
-  authServiceURL: decodeBase64(process.env.Auth.Service_URL),
+  authServiceURL: decodeBase64(process.env.Auth_Service_URL),
   verification_Address: decodeBase64(process.env.verification_Address),
   AppURL: decodeBase64(process.env.AppURL),
   AppName: decodeBase64(process.env.AppName),

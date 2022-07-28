@@ -6,7 +6,6 @@ const {
   signupPageHandler,
   signupTokenHandle,
   loginPageHandler,
-  profile,
   logout,
   getResetUserPassword,
   resetUserPassword,
@@ -29,7 +28,6 @@ authRouter.post("/auth/admincheck", checkAdminHandler);
 // authRouter.Post("/auth/adminsignup", adminSignupHandle);
 // authRouter.Post("/auth/adminlogin", loginAdminHandler);
 
-authRouter.post("/auth/profile", profile);
 authRouter.get("/auth/logout", logout);
 
 authRouter.get("/auth/github/callback", gitCallback);
