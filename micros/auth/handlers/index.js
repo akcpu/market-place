@@ -435,7 +435,6 @@ exports.loginHandler = async (req, res) => {
   }
 
   const profile = authService.getUserProfileByID(foundUser.objectId);
-
   if (!profile) {
     log.Error(`loginHandler: Profile doesn't exist ${profile}`);
   }

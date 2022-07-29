@@ -58,3 +58,75 @@ exports.setProfile = function (profile) {
   });
   return newProfile.save();
 };
+
+exports.updateProfile = async function (profile) {
+  const {
+    objectId,
+    fullName,
+    socialName,
+    avatar,
+    banner,
+    tagLine,
+    created_date,
+    last_updated,
+    lastSeen,
+    email,
+    birthday,
+    webUrl,
+    country,
+    address,
+    school,
+    liveLocation,
+    phone,
+    lang,
+    companyName,
+    voteCount,
+    shareCount,
+    followCount,
+    followerCount,
+    postCount,
+    facebookId,
+    instagramId,
+    twitterId,
+    linkedInId,
+    accessUserList,
+    permission,
+  } = profile;
+
+  await UserProfile.findOneAndUpdate(
+    { objectId },
+    {
+      fullName,
+      socialName,
+      avatar,
+      banner,
+      tagLine,
+      created_date,
+      last_updated,
+      lastSeen,
+      email,
+      birthday,
+      webUrl,
+      country,
+      address,
+      school,
+      liveLocation,
+      phone,
+      lang,
+      companyName,
+      voteCount,
+      shareCount,
+      followCount,
+      followerCount,
+      postCount,
+      facebookId,
+      instagramId,
+      twitterId,
+      linkedInId,
+      accessUserList,
+      permission,
+    }
+  );
+
+  return await UserProfile.findOne({ objectId });
+};
