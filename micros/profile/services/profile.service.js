@@ -14,7 +14,7 @@ exports.getProfileById = function (userId) {
 exports.findProfileByAccessToken = async function (token) {
   try {
     const decode = jwt.verify(token, appConfig.accessTPK);
-    return UserProfile.findOne({ objectId: decode.id });
+    return await UserProfile.findOne({ objectId: decode.id });
   } catch (error) {
     throw new Error(error);
   }
@@ -57,4 +57,76 @@ exports.setProfile = function (profile) {
     permission: "user",
   });
   return newProfile.save();
+};
+
+exports.updateProfile = async function (profile) {
+  const {
+    objectId,
+    fullName,
+    socialName,
+    avatar,
+    banner,
+    tagLine,
+    created_date,
+    last_updated,
+    lastSeen,
+    email,
+    birthday,
+    webUrl,
+    country,
+    address,
+    school,
+    liveLocation,
+    phone,
+    lang,
+    companyName,
+    voteCount,
+    shareCount,
+    followCount,
+    followerCount,
+    postCount,
+    facebookId,
+    instagramId,
+    twitterId,
+    linkedInId,
+    accessUserList,
+    permission,
+  } = profile;
+
+  await UserProfile.findOneAndUpdate(
+    { objectId },
+    {
+      fullName,
+      socialName,
+      avatar,
+      banner,
+      tagLine,
+      created_date,
+      last_updated,
+      lastSeen,
+      email,
+      birthday,
+      webUrl,
+      country,
+      address,
+      school,
+      liveLocation,
+      phone,
+      lang,
+      companyName,
+      voteCount,
+      shareCount,
+      followCount,
+      followerCount,
+      postCount,
+      facebookId,
+      instagramId,
+      twitterId,
+      linkedInId,
+      accessUserList,
+      permission,
+    }
+  );
+
+  return await UserProfile.findOne({ objectId });
 };
