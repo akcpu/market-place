@@ -25,6 +25,7 @@ exports.checkUserExistById = async function (objectId, userId) {
     username: userId,
   });
 };
+
 exports.recaptchaV3 = async function (response_key) {
   // Put secret key here, which we get from google console
   const secret_key = appConfig.recaptchaSecretKey;
@@ -38,6 +39,7 @@ exports.recaptchaV3 = async function (response_key) {
       url: url,
     });
     let data = result.data || {};
+
     if (!data.success) {
       return { success: false };
     }

@@ -3,12 +3,12 @@ const mongoose = require("mongoose");
 const log = require("../utils/errorLogger");
 const utils = require("../utils/error-handler");
 
-exports.connect = function () {
+exports.connect = async function () {
   switch (appConfig.DB_TYPE) {
     case "MONGO":
-      mongoose
+      await mongoose
         .connect(appConfig.DB_URI)
-        .then(() => console.info("MongoDB Connected"))
+        .then(() => console.log("MongoDB Connected"))
         .catch((err) => {
           log.Error(err);
           throw new utils.ErrorHandler(

@@ -67,51 +67,43 @@ exports.signupTokenHandle = async (req, res) => {
   }
 
   // Verify Captha
-  await authService
-    .recaptchaV3(req.body["g-recaptcha-response"])
-    .then((resultRecaptchV3) => {
-      if (!resultRecaptchV3) {
-        log.Error(
-          `Can not verify recaptcha ${appConfig.recaptchaSiteKey} error: ${resultRecaptchV3}`
-        );
-        return res
-          .status(HttpStatusCode.InternalServerError)
-          .send(
-            new utils.ErrorHandler(
-              "internal/recaptcha",
-              "Error happened in verifying captcha!"
-            ).json()
-          );
-      }
+  if (!appConfig.Node_ENV === "TEST") {
+    const resultRecaptchV3 = await authService.recaptchaV3(
+      req.body["g-recaptcha-response"]
+    );
 
-      if (!resultRecaptchV3.success) {
-        log.Error("Error happened in validating recaptcha!");
-        return res
-          .status(HttpStatusCode.InternalServerError)
-          .send(
-            new utils.ErrorHandler(
-              "internal/recaptchaNotValid",
-              "Recaptcha is not valid!"
-            ).json()
-          );
-      }
-    })
-    .catch((err) => {
-      log.Error(`Error while recaptcha : ${err}`);
+    if (!resultRecaptchV3) {
+      log.Error(
+        `Can not verify recaptcha ${appConfig.recaptchaSiteKey} error: ${resultRecaptchV3}`
+      );
+      return res
+        .status(HttpStatusCode.InternalServerError)
+        .send(
+          new utils.ErrorHandler(
+            "internal/recaptcha",
+            "Error happened in verifying captcha!"
+          ).json()
+        );
+    }
+
+    if (!resultRecaptchV3.success) {
+      log.Error("Error happened in validating recaptcha!");
       return res
         .status(HttpStatusCode.InternalServerError)
         .send(
           new utils.ErrorHandler(
             "internal/recaptchaNotValid",
-            "Error happened in validating recaptcha!"
+            "Recaptcha is not valid!"
           ).json()
         );
-    });
+    }
+  }
 
   // Check user exist
   await authService
     .findByUsername(req.body.email)
     .then((userAuth) => {
+      console.log(userAuth);
       if (userAuth) {
         log.Error("userAlreadyExist", "User already exist - " + req.body.email);
         return res
