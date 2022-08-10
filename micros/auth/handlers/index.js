@@ -100,21 +100,8 @@ exports.signupTokenHandle = async (req, res) => {
   }
 
   // Check user exist
-  await authService
+  const findUser = await authService
     .findByUsername(req.body.email)
-    .then((userAuth) => {
-      if (userAuth) {
-        log.Error("userAlreadyExist", "User already exist - " + req.body.email);
-        return res
-          .status(HttpStatusCode.Conflict)
-          .send(
-            new utils.ErrorHandler(
-              "userAlreadyExist",
-              "User already exist - " + req.body.email
-            ).json()
-          );
-      }
-    })
     .catch((findError) => {
       const errorMessage = `Error while finding user by user name : ${findError}`;
       log.Error(errorMessage);
@@ -124,6 +111,18 @@ exports.signupTokenHandle = async (req, res) => {
           new utils.ErrorHandler("auth.userAlreadyExist", errorMessage).json()
         );
     });
+
+  if (findUser) {
+    log.Error("userAlreadyExist", "User already exist - " + req.body.email);
+    return res
+      .status(HttpStatusCode.Conflict)
+      .send(
+        new utils.ErrorHandler(
+          "userAlreadyExist",
+          "User already exist - " + req.body.email
+        ).json()
+      );
+  }
 
   // Create signup token
   const newUserId = uuidv4();
@@ -165,76 +164,75 @@ exports.signupTokenHandle = async (req, res) => {
   postData.password = hashPassword;
   postData.userName = userData.username;
   //TODO: req.url replace with a dynamic url and add "user-agent": "authToprofile" arg
-  await authService
-    .callAPIWithHMAC("POST", req.url, postData, userData)
-    .then(() => {
-      let link = "";
-      authService
-        .CreateEmailVerficationToken({
-          UserId: newUserId,
-          Username: req.body.email,
-          EmailTo: req.body.email,
-          RemoteIpAddress: ip,
-          // HtmlTmplPath: "views/email_code_verify.html",
-          // EmailSubject: "Your verification code",
-          // FullName: req.body.fullName,
-          // UserPassword: hashPassword,
-        })
-        .then((verifyToken) => {
-          link = `${verifyToken.code}`;
-          const verification_Address = `${appConfig.baseURL}${appConfig.verification_Address}`;
-          // TODO: if Verfify By Link
-          // link = `${appConfig.authServiceURL}/user/verify/${verifyToken.code}`;
+  const callAPIWithHMAC = await authService.callAPIWithHMAC(
+    "POST",
+    req.url,
+    postData,
+    userData
+  );
 
-          // Send Email
-          sendEmail(
-            req.body.fullName,
-            req.body.email,
-            link,
-            "email_code_verify-css",
-            "Your verification code ",
-            verification_Address
-          ).catch(() => {
-            log.Error("Error happened in sending Email!");
-            return res
-              .status(HttpStatusCode.InternalServerError)
-              .send(
-                new utils.ErrorHandler(
-                  "internal/sendEmailAuth",
-                  "Error happened in sending email! - " + req.body.email
-                ).json()
-              );
-          });
-        })
-        .catch((err) => {
-          log.Error(`Error While Create Token: ${err}`);
-          return res
-            .status(HttpStatusCode.InternalServerError)
-            .send(
-              new utils.ErrorHandler(
-                "internal/createTokenAuth",
-                "Error happened in creating Token! - " + req.body.email
-              ).json()
-            );
-        });
+  if (!callAPIWithHMAC) {
+    log.Error(callAPIWithHMAC);
+    log.Error("Error happened in callAPIWithHMAC!");
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "auth/callAPIWithHMAC",
+          "Error happened in callAPIWithHMAC! - " + req.body.email
+        ).json()
+      );
+  }
+  let link = "";
+  const emailVerification = await authService.CreateEmailVerficationToken({
+    UserId: newUserId,
+    Username: req.body.email,
+    EmailTo: req.body.email,
+    RemoteIpAddress: ip,
+  });
 
-      var viewData = {
-        Message: "An Email sent to your account please verify.",
-      };
-      res.render("message", viewData);
-    })
-    .catch((err) => {
-      log.Error(err);
-      log.Error("Error happened in callAPIWithHMAC!");
-      return res
-        .status(HttpStatusCode.BadRequest)
-        .send(
-          new utils.ErrorHandler(
-            "auth/callAPIWithHMAC",
-            "Error happened in callAPIWithHMAC! - " + req.body.email
-          ).json()
-        );
-    });
+  if (!emailVerification) {
+    log.Error(`Error While Create Token: ${emailVerification}`);
+    return res
+      .status(HttpStatusCode.InternalServerError)
+      .send(
+        new utils.ErrorHandler(
+          "internal/createTokenAuth",
+          "Error happened in creating Token! - " + req.body.email
+        ).json()
+      );
+  }
+
+  link = `${emailVerification.code}`;
+  const verification_Address = `${appConfig.baseURL}${appConfig.verification_Address}`;
+  // TODO: if Verfify By Link
+  // link = `${appConfig.authServiceURL}/user/verify/${emailVerification.code}`;
+
+  // Send Email
+  const sendVerificationEmail = await sendEmail(
+    req.body.fullName,
+    req.body.email,
+    link,
+    "email_code_verify-css",
+    "Your verification code ",
+    verification_Address
+  );
+  if (!sendVerificationEmail) {
+    log.Error("Error happened in sending Email!");
+    return res
+      .status(HttpStatusCode.InternalServerError)
+      .send(
+        new utils.ErrorHandler(
+          "internal/sendEmailAuth",
+          "Error happened in sending email! - " + req.body.email
+        ).json()
+      );
+  }
+
+  var viewData = {
+    Message: "An Email sent to your account please verify.",
+  };
+  return res.render("message", viewData);
 };
 
 // Verify Show Signup Handle
@@ -344,6 +342,11 @@ exports.verifyEmailLink = async (req, res) => {
 };
 // LoginPageHandler creates a handler for logging in
 exports.loginPageHandler = async (req, res) => {
+  const token = req.cookies.token;
+  if (token) {
+    res.redirect("/profile");
+  }
+
   let gitClientID = appConfig.clientID
     ? "https://github.com/login/oauth/authorize?client_id=" +
       appConfig.clientID +
@@ -534,34 +537,32 @@ exports.resetUserPassword = async (req, res) => {
           ).json()
         );
     }
-    await authService
-      .changeUserPasswordByAccessToken(
-        req.body.oldPassword,
-        token,
-        req.body.newPassword
-      )
-      .then(() => {
-        res.clearCookie("token");
-        res.clearCookie("refreshToken");
+    const resetUserPassword = await authService.changeUserPasswordByAccessToken(
+      req.body.oldPassword,
+      token,
+      req.body.newPassword
+    );
+    if (!resetUserPassword) {
+      res.clearCookie("token");
+      res.clearCookie("refreshToken");
+      log.Error("ResetPassHandle: Find User Problem");
+      return res
+        .status(HttpStatusCode.Unauthorized)
+        .send(
+          new utils.ErrorHandler(
+            "missingResetPassword",
+            "Missing Reset Password"
+          ).json()
+        );
+    }
 
-        var viewData = {
-          Message: "change password sucessfully.",
-        };
-        res.render("message", viewData);
-      })
-      .catch(() => {
-        res.clearCookie("token");
-        res.clearCookie("refreshToken");
-        log.Error("ResetPassHandle: Find User Problem");
-        return res
-          .status(HttpStatusCode.Unauthorized)
-          .send(
-            new utils.ErrorHandler(
-              "missingResetPassword",
-              "Missing Reset Password"
-            ).json()
-          );
-      });
+    res.clearCookie("token");
+    res.clearCookie("refreshToken");
+
+    var viewData = {
+      Message: "change password sucessfully.",
+    };
+    return res.render("message", viewData);
   } catch (error) {
     log.Error("ResetPassHandle: An Error Occurred");
     return res
@@ -730,34 +731,33 @@ exports.changePasswordHandler = async (req, res) => {
           ).json()
         );
     }
-    await authService
-      .changeUserPasswordByAccessToken(
+    const changePasswordByToken =
+      await authService.changeUserPasswordByAccessToken(
         req.body.oldPassword,
         token,
         req.body.newPassword
-      )
-      .then(() => {
-        res.clearCookie("token");
-        res.clearCookie("refreshToken");
+      );
 
-        var viewData = {
-          Message: "change password sucessfully.",
-        };
-        res.render("message", viewData);
-      })
-      .catch(() => {
-        res.clearCookie("token");
-        res.clearCookie("refreshToken");
-        log.Error("changePassHandle: Find User Problem");
-        return res
-          .status(HttpStatusCode.Unauthorized)
-          .send(
-            new utils.ErrorHandler(
-              "missingChangePassHandle",
-              "Missing Change Password"
-            ).json()
-          );
-      });
+    if (!changePasswordByToken) {
+      res.clearCookie("token");
+      res.clearCookie("refreshToken");
+      log.Error("changePassHandle: Find User Problem");
+      return res
+        .status(HttpStatusCode.Unauthorized)
+        .send(
+          new utils.ErrorHandler(
+            "missingChangePassHandle",
+            "Missing Change Password"
+          ).json()
+        );
+    }
+    res.clearCookie("token");
+    res.clearCookie("refreshToken");
+
+    var viewData = {
+      Message: "change password sucessfully.",
+    };
+    return res.render("message", viewData);
   } catch (error) {
     log.Error(`changePassHandle: An Error Occurred ${error}`);
     return res
@@ -772,91 +772,89 @@ exports.changePasswordHandler = async (req, res) => {
 };
 
 // Declare the callback github route
-exports.gitCallback = (req, res) => {
+exports.gitCallback = async (req, res) => {
   // The req.query object has the query params that were sent to this route.
   const requestToken = req.query.code;
-  axios({
+  const gitCallback = await axios({
     method: "post",
     url: `https://github.com/login/oauth/access_token?client_id=${appConfig.clientID}&client_secret=${appConfig.clientSecret}&code=${requestToken}`,
     // Set the content type header, so that we get the response in JSON
     headers: {
       accept: "application/json",
     },
-  })
-    .then((response) => {
-      access_token = response.data.access_token;
-      res.redirect("/auth/gitsuccess");
-    })
-    .catch((err) => {
-      log.Error(`GithubHandle: callback Problem ${err}`);
-      return res
-        .status(HttpStatusCode.Unauthorized)
-        .send(
-          new utils.ErrorHandler(
-            "auth.missinggitCallback",
-            "Missing Callback Github"
-          ).json()
-        );
-    });
+  });
+  if (!gitCallback) {
+    log.Error(`GithubHandle: callback Problem ${gitCallback}`);
+    return res
+      .status(HttpStatusCode.Unauthorized)
+      .send(
+        new utils.ErrorHandler(
+          "auth.missinggitCallback",
+          "Missing Callback Github"
+        ).json()
+      );
+  }
+
+  access_token = gitCallback.data.access_token;
+  return res.redirect("/auth/gitsuccess");
 };
 
 // Github Authorization Successfully
-exports.gitSuccess = (req, res) => {
-  axios({
+exports.gitSuccess = async (req, res) => {
+  const gitSuccess = await axios({
     method: "get",
     url: "https://api.github.com/user",
     headers: {
       Authorization: "token " + access_token,
     },
-  })
-    .then((response) => {
-      var viewData = { userData: response.data };
-      res.render("success", viewData);
-    })
-    .catch((err) => {
-      log.Error(`GithubHandle: response Github Authorization Problem ${err}`);
-      return res
-        .status(HttpStatusCode.Unauthorized)
-        .send(
-          new utils.ErrorHandler(
-            "auth.missinggitAuth",
-            "Missing Authorization Github"
-          ).json()
-        );
-    });
+  });
+
+  if (!gitSuccess) {
+    log.Error(`GithubHandle: response Github Authorization Problem ${err}`);
+    return res
+      .status(HttpStatusCode.Unauthorized)
+      .send(
+        new utils.ErrorHandler(
+          "auth.missinggitAuth",
+          "Missing Authorization Github"
+        ).json()
+      );
+  }
+  var viewData = { userData: gitSuccess.data };
+  res.render("success", viewData);
 };
 
 // Show all UsersAuth
 exports.getUsers = async (req, res) => {
-  await authService
-    .getUsers()
-    .then((users) => res.send(users))
-    .catch(() => {
-      log.Error("ForgetPassHandle: find user Problem");
-      return res
-        .status(HttpStatusCode.NotFound)
-        .send(
-          new utils.ErrorHandler(
-            "missinggetAllUser",
-            "Missing get all user data"
-          ).json()
-        );
-    });
+  const getUsers = await authService.getUsers();
+  if (!getUsers) {
+    log.Error("ForgetPassHandle: find user Problem");
+    return res
+      .status(HttpStatusCode.NotFound)
+      .send(
+        new utils.ErrorHandler(
+          "missinggetAllUser",
+          "Missing get all user data"
+        ).json()
+      );
+  }
+  return res.send(getUsers);
 };
 // Show all Tokens
 exports.getTokens = async (req, res) => {
-  await authService
-    .getTokens()
-    .then((tokens) => res.send(tokens))
-    .catch(() => {
-      log.Error("ForgetPassHandle: find user Problem");
-      return res
-        .status(HttpStatusCode.NotFound)
-        .send(
-          new utils.ErrorHandler(
-            "missinggetAllTokens",
-            "Missing Found Token"
-          ).json()
-        );
-    });
+  const getToken = await authService.getTokens();
+
+  if (!getToken) {
+    log.Error("ForgetPassHandle: find user Problem");
+    return res
+      .status(HttpStatusCode.NotFound)
+      .send(
+        new utils.ErrorHandler(
+          "missinggetAllTokens",
+          "Missing Found Token"
+        ).json()
+      );
+  }
+
+  return res.send(getToken);
 };

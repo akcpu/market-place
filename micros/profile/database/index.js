@@ -1,9 +1,8 @@
 const { appConfig } = require("../config");
 const mongoose = require("mongoose");
-exports.connect = function () {
+exports.connect = async () => {
   console.log(appConfig.DB_URI);
-  mongoose
-    .connect(appConfig.DB_URI)
-    .then(() => console.log("MongoDB Connected"))
-    .catch((err) => console.log(err));
+  const connect = await mongoose.connect(appConfig.DB_URI);
+  if (!connect) console.log(connect);
+  console.log("MongoDB Connected");
 };

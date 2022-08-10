@@ -92,13 +92,18 @@ exports.callAPIWithHMAC = async (method, url, json, userInfo) => {
     },
   };
   axiosConfig.headers[appConfig.HMAC_HEADER_NAME] = `${hashData.toString()}`;
-  await axios
-    .post("http://localhost/profile/dto/", json, axiosConfig)
-    .then((data) => {
-      console.info(data);
-      return true;
-    })
-    .catch();
+  const getProfile = await axios.post(
+    "http://localhost/profile/dto/",
+    json,
+    axiosConfig
+  );
+
+  if (!getProfile) {
+    console.log(`callAPIWithHMAC ${getProfile}`);
+    return Error("auth/callAPIWithHMAC");
+  }
+  console.info(getProfile);
+  return true;
 };
 
 exports.getUserProfileByID = async function (reqUserId) {
@@ -109,33 +114,32 @@ exports.getUserProfileByID = async function (reqUserId) {
       "user-agent": "authToProfile",
     },
   };
-  await axios
-    .get(profileURL, axiosConfig)
-    .then(function (foundProfile) {
-      console.log(foundProfile);
-    })
-    .catch((err) => {
-      //TODO: Expansion of errors
-      if (appConfig.Node_ENV === "development") {
-        if (err.response) {
-          // The client was given an error response (5xx, 4xx)
-          console.log(err.response.data);
-          console.log(err.response.status);
-          console.log(err.response.headers);
-        } else if (err.request) {
-          // The client never received a response, and the request was never left
-          console.log(err.request);
-        } else {
-          // Anything else
-          console.log("Error", err.message);
-        }
-      }
-      if (err.response.status == 404)
-        console.log("NotFoundHTTPStatusError: " + err);
+  const foundProfile = await axios.get(profileURL, axiosConfig);
 
-      console.log(`functionCall ${profileURL} -  ${err.message}`);
-      return Error("getUserProfileByID/functionCall");
-    });
+  if (!foundProfile) {
+    //TODO: Expansion of errors
+    if (appConfig.Node_ENV === "development") {
+      if (foundProfile.response) {
+        // The client was given an error response (5xx, 4xx)
+        console.log(foundProfile.response.data);
+        console.log(foundProfile.response.status);
+        console.log(foundProfile.response.headers);
+      } else if (foundProfile.request) {
+        // The client never received a response, and the request was never left
+        console.log(foundProfile.request);
+      } else {
+        // Anything else
+        console.log("Error", foundProfile.message);
+      }
+    }
+    if (foundProfile.response.status == 404)
+      console.log("NotFoundHTTPStatusError: " + foundProfile);
+
+    console.log(`functionCall ${profileURL} -  ${foundProfile.message}`);
+    return Error("getUserProfileByID/functionCall");
+  }
+
+  console.log(foundProfile);
 };
 exports.checkTokenExist = async function (reqCode) {
   return await UserToken.findOne({ code: reqCode });
@@ -148,14 +152,13 @@ exports.countExistToken = async function (reqCode) {
 };
 
 exports.updateVerifyUser = async function (reqUserId, verified) {
-  UserToken.updateOne({ objectId: reqUserId }, { isVerified: verified })
-    .then((obj) => {
-      console.log("updateOne Updated - " + obj);
-      // res.redirect("orders");
-    })
-    .catch((err) => {
-      console.log("updateOne Error: " + err);
-    });
+  const findUserToken = await UserToken.updateOne(
+    { objectId: reqUserId },
+    { isVerified: verified }
+  );
+  if (!findUserToken) console.log("updateOne Error: " + findUserToken);
+
+  console.log("updateOne Updated - " + findUserToken);
 
   //TODO: PhoneVerfy
   return await UserAuth.updateOne(
@@ -165,14 +168,10 @@ exports.updateVerifyUser = async function (reqUserId, verified) {
 };
 
 exports.updateTokenCounter = async function (tokenId) {
-  UserToken.findOne({ objectId: tokenId })
-    .then((result) => {
-      let count = result.counter + 1;
-      return UserToken.updateOne({ objectId: tokenId }, { counter: count });
-    })
-    .catch((err) => {
-      console.log("updateTokenCounter Error: " + err);
-    });
+  const findUserToken = await UserToken.findOne({ objectId: tokenId });
+  if (findUserToken) console.log("updateTokenCounter Error: " + findUserToken);
+  let count = findUserToken.counter + 1;
+  return UserToken.updateOne({ objectId: tokenId }, { counter: count });
 };
 
 // exports.checkUserVerify = async function (reqUserName) {
