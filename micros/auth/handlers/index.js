@@ -103,7 +103,6 @@ exports.signupTokenHandle = async (req, res) => {
   await authService
     .findByUsername(req.body.email)
     .then((userAuth) => {
-      console.log(userAuth);
       if (userAuth) {
         log.Error("userAlreadyExist", "User already exist - " + req.body.email);
         return res

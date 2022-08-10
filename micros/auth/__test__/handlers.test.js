@@ -1,3 +1,7 @@
+// Auth End to End Test
+
+it("true", () => {});
+
 const request = require("supertest");
 
 const app = request("http://localhost");
@@ -11,12 +15,12 @@ describe("GET", () => {
 
 const fullName = "firstname lastname";
 const email = "email@email.com";
-const newPassword = "P@ssw0rd";
-const confirmPassword = "P@ssw0rd";
+const newPassword = "P@ssw0rdP@ssw0rd123456";
+const confirmPassword = "P@ssw0rdP@ssw0rd123456";
 const gRecaptchaResponse = "true";
 
 describe("POST", () => {
-  it("should reject an invalid signup request", async () => {
+  it("should Create User an send Email", async () => {
     const response = await app.post("/auth/signup").type("form").send({
       fullName: fullName,
       email: email,

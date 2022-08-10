@@ -5,6 +5,7 @@
   "author": "Arman Kiani <armankianipm@gmail.com>",
   "main": "index.js",
   "dependencies": {
+    "@types/jest": "^28.1.6",
     "ajv": "^8.11.0",
     "axios": "^0.27.2",
     "bcrypt": "^5.0.1",
