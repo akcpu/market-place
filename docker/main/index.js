@@ -6,7 +6,7 @@
 
 const express = require("express");
 const app = express();
-const handler = require("./function/handler");
+// const handler = require("./function/handler");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 
@@ -36,16 +36,16 @@ if (process.env.RAW_BODY === "true") {
 }
 app.use(cookieParser());
 
-const middleware = async (req, res) => {
-  Promise.resolve(handler(req, res));
-};
+// const middleware = async (req, res) => {
+//   Promise.resolve(handler(req, res));
+// };
 
-app.post("/*", middleware);
-app.get("/*", middleware);
-app.patch("/*", middleware);
-app.put("/*", middleware);
-app.delete("/*", middleware);
-app.options("/*", middleware);
+// app.post("/*", middleware);
+// app.get("/*", middleware);
+// app.patch("/*", middleware);
+// app.put("/*", middleware);
+// app.delete("/*", middleware);
+// app.options("/*", middleware);
 
 const port = process.env.http_port || 3000;
 

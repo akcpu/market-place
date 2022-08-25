@@ -59,10 +59,11 @@ exports.getProfile = async function (req, res) {
 exports.getProfiles = async function (req, res) {
   console.log("object");
   await res.send("profiles");
-  profileService
-    .getProfiles()
-    .then((profiles) => res.send(profiles))
-    .catch(() => res.status(404).json({ msg: "No profile found" }));
+  const getProfiles = await profileService.getProfiles();
+
+  if (!getProfiles) res.status(404).json({ msg: "No profile found" });
+
+  res.send(getProfiles);
 };
 
 // GET /Profile/:id
@@ -102,33 +103,35 @@ exports.getProfileById = async function (req, res) {
 };
 
 // POST /profile
-exports.setProfile = function (req, res) {
+exports.setProfile = async (req, res) => {
   let hash = req.header(appConfig.HMAC_HEADER_NAME);
-  hmac
-    .validate(JSON.stringify(req.body), appConfig.HMAC_SECRET_KEY, hash)
-    .then(() => {
-      if (validate_setData(req.body)) {
-        profileService.setProfile(req.body);
-        res.send("User has been added to Profile microservice service");
-      } else {
-        log.Error(
-          `setProfile: Set Profile Problem ${JSON.stringify(
-            validate_setData.errors
-          )}`
-        );
-        return res
-          .status(HttpStatusCode.BadRequest)
-          .send(
-            new utils.ErrorHandler(
-              "profile.missingSetProfile",
-              "Missing Set Profile"
-            ).json()
-          );
-      }
-    })
-    .catch((err) => {
-      return res.send(`Error while Save User:  ${err}`);
-    });
+  const HMAC_Validation = await hmac.validate(
+    JSON.stringify(req.body),
+    appConfig.HMAC_SECRET_KEY,
+    hash
+  );
+
+  if (!HMAC_Validation)
+    return res.send(`Error while Save User: ${HMAC_Validation}`);
+
+  if (validate_setData(req.body)) {
+    profileService.setProfile(req.body);
+    res.send("User has been added to Profile microservice service");
+  } else {
+    log.Error(
+      `setProfile: Set Profile Problem ${JSON.stringify(
+        validate_setData.errors
+      )}`
+    );
+    return res
+      .status(HttpStatusCode.BadRequest)
+      .send(
+        new utils.ErrorHandler(
+          "profile.missingSetProfile",
+          "Missing Set Profile"
+        ).json()
+      );
+  }
 };
 
 // PUT update /profile

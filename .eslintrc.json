@@ -2,7 +2,8 @@
   "env": {
     "browser": true,
     "es2021": true,
-    "node": true
+    "node": true,
+    "jest": true
   },
   "extends": ["eslint:recommended", "prettier"],
   "parserOptions": {
@@ -21,6 +22,11 @@
     "no-restricted-syntax": 0,
     "no-return-await": 0,
     "no-console": 0,
+    // "jest/no-disabled-tests": "warn",
+    // "jest/no-focused-tests": "error",
+    // "jest/no-identical-title": "error",
+    // "jest/prefer-to-have-length": "warn",
+    // "jest/valid-expect": "error",
     "prettier/prettier": [
       "error",
       {

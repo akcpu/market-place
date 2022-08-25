@@ -4,24 +4,18 @@ const validate_setData = ajv.getSchema("setData");
 const productService = require("../services/product-service");
 
 // GET /api/products
-exports.getproducts = function (req, res) {
-  productService
-    .getproducts()
-    .then((products) => res.send(products))
-    .catch((err) => res.status(404).json({ msg: "No products found" + err }));
+exports.getproducts = async (req, res) => {
+  const getProduct = await productService.getproducts();
+  if (!getProduct) res.status(404).json({ msg: "No products found" + err });
+  res.send(getProduct);
 };
 
 // GET /api/products/:id
-exports.getProductById = function (req, res) {
+exports.getProductById = async (req, res) => {
   if (validate_getID(req.params)) {
-    productService
-      .getProductById(req.params.id)
-      .then((products) => {
-        res.send(products);
-      })
-      .catch((err) => {
-        res.status(404).json({ msg: "No product found" + err });
-      });
+    const getProduct = await productService.getProductById(req.params.id);
+    if (!getProduct) res.status(404).json({ msg: "No product found" + err });
+    res.send(getProduct);
   } else {
     console.log(validate_getID.errors);
     res

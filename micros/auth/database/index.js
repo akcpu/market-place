@@ -3,19 +3,19 @@ const mongoose = require("mongoose");
 const log = require("../utils/errorLogger");
 const utils = require("../utils/error-handler");
 
-exports.connect = function () {
+exports.connect = async function () {
+  let connect;
   switch (appConfig.DB_TYPE) {
     case "MONGO":
-      mongoose
-        .connect(appConfig.DB_URI)
-        .then(() => console.info("MongoDB Connected"))
-        .catch((err) => {
-          log.Error(err);
-          throw new utils.ErrorHandler(
-            "DBError",
-            "Problem in MongoDB Connection"
-          );
-        });
+      connect = await mongoose.connect(appConfig.DB_URI);
+      if (!connect) {
+        log.Error(connect);
+        throw new utils.ErrorHandler(
+          "DBError",
+          "Problem in MongoDB Connection"
+        );
+      }
+      console.log("MongoDB Connected");
       break;
 
     default:
