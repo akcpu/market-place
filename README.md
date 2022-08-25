@@ -1,17 +1,8 @@
-# Docker market-place a Node.js web app
-
 ## Quick Start
 
-```bash
-# Run in Docker
-docker-compose up -d
-# use -d flag to run in background
+# Run in Terminal (After Install TELAR-CLI):
 
-# Tear down
-docker-compose down
+telar run -p 80
 
-# To re-build
-docker-compose build
-sudo docker-compose up --build -d
 
 ```
